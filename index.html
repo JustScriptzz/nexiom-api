@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexiom — one endpoint, always answering</title>
+<meta name="description" content="Nexiom is a single AI inference endpoint that keeps answering, request after request.">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <img src="logo.png" alt="Nexiom" class="brand-mark">
+      <span class="brand-name">Nexiom</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="#access" class="nav-cta">Get access</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <p class="eyebrow">AI inference · one endpoint</p>
+      <h1>Ask it anything.<br>It answers <em>every</em> time.</h1>
+      <p class="hero-sub">Nexiom is a single API endpoint in front of a resilient chain of inference paths. If one is busy, your request quietly moves to the next. Your code never has to know.</p>
+      <div class="hero-actions">
+        <a href="#quickstart" class="btn btn-primary">Read the quickstart</a>
+        <a href="#access" class="btn btn-ghost">Request an API key</a>
+      </div>
+
+      <div class="console" role="img" aria-label="Terminal showing an example Nexiom API request and response">
+        <div class="console-bar">
+          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+          <span class="console-title">request.sh</span>
+        </div>
+        <pre class="console-body"><code><span class="c-muted">$</span> curl https://nexiom.dev/api/v1/chat/completions \
+    -H <span class="c-str">"Authorization: Bearer $NEXIOM_KEY"</span> \
+    -d <span class="c-str">'{ "messages": [{"role":"user","content":"still there?"}] }'</span>
+
+<span class="c-muted" id="typedResponse"></span><span class="cursor">▍</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <p class="eyebrow eyebrow-center">Every request, start to finish</p>
+    <h2>What happens between your call and your answer</h2>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">01</span>
+        <h3>You send one request</h3>
+        <p>One base URL, one key, the same request body you'd send to any chat completions endpoint. No provider names to memorize, no fallback logic to write yourself.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <h3>Nexiom finds a healthy path</h3>
+        <p>Behind the scenes, Nexiom holds open several independent inference paths and checks which one is fastest and free right now, in the time it takes to open a socket.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <h3>You get an answer, not an error</h3>
+        <p>If a path is throttled or down, Nexiom re-routes before it ever reaches your code. From where you're sitting, the response just shows up.</p>
+      </div>
+    </div>
+
+    <div class="routeviz-wrap">
+      <p class="routeviz-caption">A request finding its way through — one path stalls, another one carries it.</p>
+      <div class="routeviz" id="routeviz">
+        <div class="rv-node rv-you">you</div>
+        <div class="rv-line rv-line-in"><span class="rv-packet"></span></div>
+        <div class="rv-node rv-nexiom">
+          <img src="logo.png" alt="" class="rv-nexiom-mark">
+        </div>
+        <div class="rv-paths">
+          <div class="rv-path" data-path="0"><span class="rv-line"><span class="rv-packet"></span></span><span class="rv-node rv-endpoint">path A</span></div>
+          <div class="rv-path" data-path="1"><span class="rv-line"><span class="rv-packet"></span></span><span class="rv-node rv-endpoint">path B</span></div>
+          <div class="rv-path" data-path="2"><span class="rv-line"><span class="rv-packet"></span></span><span class="rv-node rv-endpoint">path C</span></div>
+        </div>
+        <div class="rv-line rv-line-out"><span class="rv-packet" id="rvOutPacket"></span></div>
+        <div class="rv-node rv-you rv-you-out">answer</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="quickstart" id="quickstart">
+    <p class="eyebrow eyebrow-center">Quickstart</p>
+    <h2>Drop-in wherever you already call a chat endpoint</h2>
+    <p class="quickstart-sub">Nexiom speaks the same chat-completions shape you already know. Point your existing client at it and go.</p>
+
+    <div class="tabs" id="codeTabs">
+      <button class="tab active" data-tab="curl">curl</button>
+      <button class="tab" data-tab="js">JavaScript</button>
+      <button class="tab" data-tab="py">Python</button>
+    </div>
+
+    <pre class="code-block" data-panel="curl"><code>curl https://nexiom.dev/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $NEXIOM_KEY" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "Explain Nexiom in one line." }
+    ]
+  }'</code></pre>
+
+    <pre class="code-block hidden" data-panel="js"><code>const res = await fetch("https://nexiom.dev/api/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${process.env.NEXIOM_KEY}`
+  },
+  body: JSON.stringify({
+    messages: [{ role: "user", content: "Explain Nexiom in one line." }]
+  })
+});
+
+const data = await res.json();
+console.log(data.choices[0].message.content);</code></pre>
+
+    <pre class="code-block hidden" data-panel="py"><code>import os, requests
+
+res = requests.post(
+    "https://nexiom.dev/api/v1/chat/completions",
+    headers={"Authorization": f"Bearer {os.environ['NEXIOM_KEY']}"},
+    json={"messages": [{"role": "user", "content": "Explain Nexiom in one line."}]},
+)
+
+print(res.json()["choices"][0]["message"]["content"])</code></pre>
+  </section>
+
+  <section class="access" id="access">
+    <div class="access-card">
+      <p class="eyebrow eyebrow-center">Access</p>
+      <h2>Keys are handed out one by one, for now</h2>
+      <p>Nexiom is early and small on purpose. Reach out and you'll get a key back personally, usually the same day.</p>
+      <a class="btn btn-primary" href="mailto:hello@nexiom.dev">hello@nexiom.dev</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <img src="logo.png" alt="Nexiom" class="footer-mark">
+  <span>Nexiom</span>
+  <span class="footer-dot">·</span>
+  <span>a small, resilient AI endpoint</span>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

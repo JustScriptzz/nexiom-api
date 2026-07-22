@@ -1,0 +1,9 @@
+{
+  "name": "nexiom-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nexiom - a single AI inference endpoint backed by a chain of failover paths.",
+  "engines": {
+    "node": ">=18"
+  }
+}
