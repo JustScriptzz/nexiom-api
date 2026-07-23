@@ -189,46 +189,121 @@ async function renderDashboard() {
   const lastUsed = keys.filter(k => k.last_used_at).sort((a, b) => new Date(b.last_used_at) - new Date(a.last_used_at))[0];
 
   let modelsCount = 0;
+  let stats = { providers: [] };
   try {
-    const modelsData = await api('/api/v1/models');
-    if (modelsData.models) modelsCount = modelsData.models.length;
+    const [m, s] = await Promise.all([
+      api('/api/v1/models').catch(() => ({ models: [] })),
+      api('/api/v1/stats').catch(() => ({ providers: [] })),
+    ]);
+    if (m.models) modelsCount = m.models.length;
+    if (s.providers) stats = s;
   } catch {}
 
+  const online = stats.providers.filter(p => p.status === 'online').length;
+  const offline = stats.providers.filter(p => p.status !== 'online').length;
+
   el.innerHTML = `
-    <div style="text-align:center;margin-bottom:28px">
-      <p style="font-size:1.1rem;font-weight:600;font-family:var(--font-display);margin:0">${esc(data.email)}</p>
-      <p class="text-muted" style="font-size:0.85rem;margin-top:4px">Joined ${new Date(data.created_at || Date.now()).toLocaleDateString()}</p>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:32px">
-      <div class="page-card" style="padding:20px;text-align:center;margin:0">
-        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${keys.length}</div>
-        <div class="text-muted" style="font-size:0.82rem">Total Keys</div>
-      </div>
-      <div class="page-card" style="padding:20px;text-align:center;margin:0">
-        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${activeKeys.length}</div>
-        <div class="text-muted" style="font-size:0.82rem">Active Keys</div>
-      </div>
-      <div class="page-card" style="padding:20px;text-align:center;margin:0">
-        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${modelsCount}</div>
-        <div class="text-muted" style="font-size:0.82rem">Available Models</div>
+    <div class="dash-header">
+      <div class="dash-user">
+        <div class="dash-avatar">${(data.email || '?')[0].toUpperCase()}</div>
+        <div>
+          <p class="dash-email">${esc(data.email)}</p>
+          <p class="dash-joined">Member since ${data.created_at ? new Date(data.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'today'}</p>
+        </div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px">
-      <a href="#/keys" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
-        <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Manage Keys</h3>
-        <p class="text-muted" style="margin:0;font-size:0.82rem">Generate, edit, enable or delete your API keys</p>
+
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-card-icon">🔑</div>
+        <div class="dash-card-body">
+          <div class="dash-card-value">${keys.length}</div>
+          <div class="dash-card-label">Total Keys</div>
+        </div>
+        <div class="dash-card-footer">
+          ${activeKeys.length} active · ${keys.length - activeKeys.length} disabled
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-icon">🧠</div>
+        <div class="dash-card-body">
+          <div class="dash-card-value">${modelsCount}</div>
+          <div class="dash-card-label">Models</div>
+        </div>
+        <div class="dash-card-footer">
+          Across ${stats.providers.length} providers
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-icon">📡</div>
+        <div class="dash-card-body">
+          <div class="dash-card-value">${online}</div>
+          <div class="dash-card-label">Providers Online</div>
+        </div>
+        <div class="dash-card-footer">
+          ${offline > 0 ? `${offline} offline` : 'All healthy'}
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-section-header">
+      <h3>Provider Status</h3>
+    </div>
+    <div class="dash-providers">
+      ${stats.providers.map(p => `
+        <div class="dash-provider ${p.status === 'online' ? 'dash-provider-ok' : 'dash-provider-down'}">
+          <div class="dash-provider-left">
+            <span class="dash-dot ${p.status === 'online' ? 'dash-dot-ok' : 'dash-dot-err'}"></span>
+            <span class="dash-provider-name">${esc(p.provider)}</span>
+            <span class="dash-provider-path">${p.path}</span>
+          </div>
+          <div class="dash-provider-right">
+            ${p.latency ? `<span class="dash-latency">${p.latency}ms</span>` : ''}
+            <span class="dash-status ${p.status === 'online' ? 'dash-status-ok' : 'dash-status-err'}">${p.status}</span>
+          </div>
+          ${p.default_model ? `<div class="dash-provider-model">default: ${esc(p.default_model)}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="dash-section-header">
+      <h3>Quick Actions</h3>
+    </div>
+    <div class="dash-actions">
+      <a href="#/keys" data-nav class="dash-action">
+        <span class="dash-action-icon">🔑</span>
+        <span class="dash-action-label">Manage Keys</span>
+        <span class="dash-action-arrow">→</span>
       </a>
-      <a href="#/chat" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
-        <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Chat</h3>
-        <p class="text-muted" style="margin:0;font-size:0.82rem">Test models interactively with full parameter control</p>
+      <a href="#/chat" data-nav class="dash-action">
+        <span class="dash-action-icon">💬</span>
+        <span class="dash-action-label">Open Chat</span>
+        <span class="dash-action-arrow">→</span>
+      </a>
+      <a href="#/models" data-nav class="dash-action">
+        <span class="dash-action-icon">🧠</span>
+        <span class="dash-action-label">Browse Models</span>
+        <span class="dash-action-arrow">→</span>
+      </a>
+      <a href="#/docs" data-nav class="dash-action">
+        <span class="dash-action-icon">📄</span>
+        <span class="dash-action-label">API Docs</span>
+        <span class="dash-action-arrow">→</span>
       </a>
     </div>
+
     ${lastUsed ? `
-    <div class="page-card" style="padding:16px 20px;margin:0">
-      <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">
-        Last key usage: ${esc(lastUsed.label || lastUsed.key)} —
-        ${new Date(lastUsed.last_used_at).toLocaleString()}
-      </p>
+    <div class="dash-section-header">
+      <h3>Recent Activity</h3>
+    </div>
+    <div class="dash-activity">
+      <div class="dash-activity-item">
+        <span class="dash-activity-icon">🔑</span>
+        <div class="dash-activity-body">
+          <span class="dash-activity-text">Key <strong>${esc(lastUsed.label || lastUsed.key)}</strong> last used</span>
+          <span class="dash-activity-time">${new Date(lastUsed.last_used_at).toLocaleString()}</span>
+        </div>
+      </div>
     </div>` : ''}
   `;
 }
