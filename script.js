@@ -314,17 +314,25 @@ async function renderChat() {
 
   tempRange.addEventListener('input', () => { tempVal.textContent = tempRange.value; });
 
+  const searchInput = document.getElementById('chatModelSearch');
+  let allModels = [];
+
   const modelsData = await api('/api/v1/models');
   if (modelsData.models && modelsData.models.length > 0) {
     const seen = new Set();
-    modelSel.innerHTML = '<option value="">Auto</option>' +
-      modelsData.models
-        .filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; })
-        .map((m) => `<option value="${m.id}">${m.id}</option>`)
-        .join('');
+    allModels = modelsData.models.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
+    modelSel.innerHTML = '<option value="">Auto</option>' + allModels.map((m) => `<option value="${m.id}">${m.id}</option>`).join('');
   } else {
     modelSel.innerHTML = '<option value="">Auto</option>';
   }
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase();
+    modelSel.innerHTML = '<option value="">Auto</option>' +
+      allModels.filter((m) => m.id.toLowerCase().includes(q))
+        .map((m) => `<option value="${m.id}">${m.id}</option>`)
+        .join('');
+  });
 
   function addMsg(role, content) {
     const div = document.createElement('div');

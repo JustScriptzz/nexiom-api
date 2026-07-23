@@ -253,9 +253,10 @@ print(res.json()["choices"][0]["message"]["content"])</code></pre>
     </div>
     <div class="chat-bottom">
       <div class="chat-toolbar" id="chatToolbar">
-        <label class="ct-label">
+        <label class="ct-label ct-label-model">
           Model
-          <select class="ct-select" id="chatModel"></select>
+          <input type="text" class="ct-search" id="chatModelSearch" placeholder="Search models..." autocomplete="off">
+          <select class="ct-select" id="chatModel" size="6"></select>
         </label>
         <label class="ct-label ct-label-sm">
           Temp

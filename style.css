@@ -664,6 +664,23 @@ a { color: inherit; }
   font-family: var(--font-mono);
 }
 .ct-label-sm { min-width: 0; }
+.ct-label-model {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.ct-search {
+  padding: 5px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  outline: none;
+}
+.ct-search:focus { border-color: var(--blue); }
+.ct-label-model .ct-select { max-width: none; width: 260px; }
 .ct-select, .ct-input {
   padding: 5px 8px;
   background: var(--surface);
