@@ -26,10 +26,16 @@ async function checkSession() {
 }
 
 function updateNav() {
-  const el = document.getElementById('navAuth');
-  if (!el) return;
-  if (currentUser) { el.textContent = 'Dashboard'; el.href = '#/dashboard'; }
-  else { el.textContent = 'Log in'; el.href = '#/login'; }
+  const authEl = document.getElementById('navAuth');
+  if (!authEl) return;
+  const authed = document.querySelectorAll('.nav-authed');
+  if (currentUser) {
+    authEl.textContent = 'Log out'; authEl.href = '#/logout';
+    authed.forEach(a => a.classList.remove('hidden'));
+  } else {
+    authEl.textContent = 'Log in'; authEl.href = '#/login';
+    authed.forEach(a => a.classList.add('hidden'));
+  }
 }
 
 function getHash() { return (location.hash.slice(1) || '/').split('?')[0]; }
@@ -63,9 +69,12 @@ async function renderRoute() {
     case '/signup':
       if (currentUser) { navigate('/dashboard'); return; }
       app.innerHTML = html('tmpl-signup'); renderSignup(); break;
+    case '/keys':
     case '/dashboard':
       if (!currentUser) { navigate('/login'); return; }
       app.innerHTML = html('tmpl-dashboard'); renderDashboard(); break;
+    case '/logout':
+      localStorage.removeItem('nx_token'); currentUser = null; navigate('/'); break;
     case '/playground':
       if (!currentUser) { navigate('/login'); return; }
       app.innerHTML = html('tmpl-playground'); renderPlayground(); break;
