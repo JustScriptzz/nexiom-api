@@ -565,6 +565,7 @@ a { color: inherit; }
   margin: 0 auto;
   padding: 0 20px;
   position: relative;
+  overflow: visible;
 }
 .chat-messages {
   flex: 1;
@@ -695,11 +696,11 @@ a { color: inherit; }
 .ct-combo-dropdown {
   display: none;
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 0;
-  z-index: 30;
+  z-index: 50;
   width: 260px;
-  margin-top: 2px;
+  margin-bottom: 4px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 8px;
