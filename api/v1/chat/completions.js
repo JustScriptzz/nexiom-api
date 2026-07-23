@@ -19,7 +19,22 @@ const REQUEST_TIMEOUT_MS = 20000;
 function isAuthorized(req) {
   const header = req.headers["authorization"] || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  return Boolean(process.env.NEXIOM_API_KEY) && token === process.env.NEXIOM_API_KEY;
+  if (!token) return false;
+
+  if (process.env.NEXIOM_API_KEY && token === process.env.NEXIOM_API_KEY) {
+    return true;
+  }
+
+  if (process.env.NEXIOM_KEYS) {
+    try {
+      const keys = JSON.parse(process.env.NEXIOM_KEYS);
+      return keys.some((k) => (typeof k === "string" ? k : k.key) === token);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 async function callPath(path, body) {
