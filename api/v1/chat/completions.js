@@ -27,6 +27,7 @@ function loadPaths(reqModel) {
   })).filter((p) => {
     if (!p.url || !p.key) return false;
     try { const h = new URL(p.url).hostname; if (h.includes('groq') || h.includes('ofox') || h.includes('cerebras') || h.includes('ai.furry.vg')) return false; } catch {}
+    if (reqModel && /claude|gpt-5-nano|gemini-3-flash/i.test(reqModel)) return false;
     const isZen = p.label === 'path-c';
     if (isZen && reqModel && reqModel !== 'nexiom-default' && !OPencodeZenFree.includes(reqModel)) return false;
     return true;

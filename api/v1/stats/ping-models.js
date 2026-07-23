@@ -28,8 +28,10 @@ module.exports = async (req, res) => {
     return true;
   });
 
+  const blocked = /claude|gpt-5-nano|gemini-3-flash/i;
   const grouped = {};
   for (const m of models) {
+    if (blocked.test(m.id)) continue;
     const letter = (m.path || '').replace('Path ', '');
     if (!letter) continue;
     if (!grouped[letter]) grouped[letter] = [];
