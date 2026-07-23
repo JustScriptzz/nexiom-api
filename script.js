@@ -360,7 +360,9 @@ async function renderChat() {
     const data = await api('/api/v1/playground/chat', { method: 'POST', body: JSON.stringify(payload) });
 
     if (data.error) {
-      thinkingDiv.querySelector('.chat-msg-content').textContent = data.error?.message || data.error || 'Request failed.';
+      thinkingDiv.innerHTML = '<div class="chat-msg-content" style="color:#ff5f57">' + esc(data.error?.message || data.error || 'Request failed.') + '</div>';
+    } else if (data.choices?.[0]?.error) {
+      thinkingDiv.innerHTML = '<div class="chat-msg-content" style="color:#ff5f57">' + esc(data.choices[0].error) + '</div>';
     } else {
       const content = data.choices?.[0]?.message?.content || JSON.stringify(data);
       const model = data.model || '';

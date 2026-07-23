@@ -576,6 +576,7 @@ a { color: inherit; }
 }
 .chat-msg {
   display: flex;
+  flex-direction: column;
   max-width: 88%;
 }
 .chat-msg-user { align-self: flex-end; }
