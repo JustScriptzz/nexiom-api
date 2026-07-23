@@ -231,14 +231,14 @@ async function renderDashboard() {
           <div class="dash-card-label">Models</div>
         </div>
         <div class="dash-card-footer">
-          Across ${stats.providers.length} providers
+          Across ${stats.providers.length} paths
         </div>
       </div>
       <div class="dash-card">
         <div class="dash-card-icon">📡</div>
         <div class="dash-card-body">
           <div class="dash-card-value">${online}</div>
-          <div class="dash-card-label">Providers Online</div>
+          <div class="dash-card-label">Paths Online</div>
         </div>
         <div class="dash-card-footer">
           ${offline > 0 ? `${offline} offline` : 'All healthy'}
@@ -247,15 +247,14 @@ async function renderDashboard() {
     </div>
 
     <div class="dash-section-header">
-      <h3>Provider Status</h3>
+      <h3>Path Status</h3>
     </div>
     <div class="dash-providers">
       ${stats.providers.map(p => `
         <div class="dash-provider ${p.status === 'online' ? 'dash-provider-ok' : 'dash-provider-down'}">
           <div class="dash-provider-left">
             <span class="dash-dot ${p.status === 'online' ? 'dash-dot-ok' : 'dash-dot-err'}"></span>
-            <span class="dash-provider-name">${esc(p.provider)}</span>
-            <span class="dash-provider-path">${p.path}</span>
+            <span class="dash-provider-name">${p.path}</span>
           </div>
           <div class="dash-provider-right">
             ${p.latency ? `<span class="dash-latency">${p.latency}ms</span>` : ''}

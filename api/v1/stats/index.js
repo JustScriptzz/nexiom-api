@@ -14,8 +14,6 @@ module.exports = async (req, res) => {
   })).filter((p) => p.url && p.key);
 
   const providerStatus = await Promise.all(paths.map(async (p) => {
-    let label = 'unknown';
-    try { label = new URL(p.url).hostname; } catch {}
     let status = 'unknown';
     let latency = null;
     try {
@@ -32,7 +30,7 @@ module.exports = async (req, res) => {
     } catch (e) {
       status = e?.name === 'AbortError' ? 'timeout' : 'unreachable';
     }
-    return { path: `Path ${p.id}`, provider: label, default_model: p.model || null, status, latency };
+    return { path: `Path ${p.id}`, default_model: p.model || null, status, latency };
   }));
 
   json(res, 200, {
