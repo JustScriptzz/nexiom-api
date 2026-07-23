@@ -57,7 +57,7 @@ module.exports = async (req, res) => {
           if (Array.isArray(list)) {
             for (const m of list) {
               const modelId = m.id || m.model || m.name;
-              if (modelId) {
+              if (modelId && !/claude/i.test(modelId)) {
                 if (id === 'C' && !OPencodeZenFree.includes(modelId)) continue;
                 results.push({
                   id: modelId,

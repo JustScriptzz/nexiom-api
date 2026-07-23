@@ -110,6 +110,10 @@ function renderHome() {
 
 async function renderModels() {
   const list = document.getElementById('modelsList');
+  const pingBtn = document.getElementById('pingAllBtn');
+  const pingStatus = document.getElementById('pingStatus');
+  const pingResults = document.getElementById('pingResults');
+
   const data = await api('/api/v1/models');
   if (!data.models || data.models.length === 0) {
     list.innerHTML = '<p class="text-muted">No models are currently configured.</p>';
@@ -121,6 +125,42 @@ async function renderModels() {
       ${m.default ? '<span class="model-badge model-badge-default">default</span>' : ''}
     </div>
   `).join('')}</div>`;
+
+  pingBtn.addEventListener('click', async () => {
+    pingBtn.disabled = true;
+    pingBtn.textContent = 'Pinging...';
+    pingStatus.textContent = 'Testing provider paths...';
+    pingResults.innerHTML = '';
+
+    const stats = await api('/api/v1/stats').catch(() => null);
+    if (!stats || !stats.providers) {
+      pingStatus.textContent = 'Failed to ping paths.';
+      pingBtn.disabled = false;
+      pingBtn.textContent = 'Ping All Paths';
+      return;
+    }
+
+    const online = stats.providers.filter(p => p.status === 'online').length;
+    pingStatus.textContent = `${online}/${stats.providers.length} paths online`;
+
+    pingResults.innerHTML = '<div class="dash-providers" style="margin-top:8px">' +
+      stats.providers.map(p => `
+        <div class="dash-provider ${p.status === 'online' ? 'dash-provider-ok' : 'dash-provider-down'}" style="margin:0">
+          <div class="dash-provider-left">
+            <span class="dash-dot ${p.status === 'online' ? 'dash-dot-ok' : 'dash-dot-err'}"></span>
+            <span class="dash-provider-name">${p.path}</span>
+          </div>
+          <div class="dash-provider-right">
+            ${p.latency ? `<span class="dash-latency">${p.latency}ms</span>` : ''}
+            <span class="dash-status ${p.status === 'online' ? 'dash-status-ok' : 'dash-status-err'}">${p.status}</span>
+          </div>
+          ${p.default_model ? `<div class="dash-provider-model">default: ${esc(p.default_model)}</div>` : ''}
+        </div>
+      `).join('') + '</div>';
+
+    pingBtn.disabled = false;
+    pingBtn.textContent = 'Ping All Paths';
+  });
 }
 
 function renderDocs() {
@@ -443,9 +483,10 @@ async function renderChat() {
     }
   });
 
-  comboDropdown.addEventListener('click', (e) => {
+  comboOptions.addEventListener('mousedown', (e) => {
     const opt = e.target.closest('.ct-combo-opt');
     if (!opt) return;
+    e.preventDefault();
     selectModel(opt.dataset.value);
   });
 

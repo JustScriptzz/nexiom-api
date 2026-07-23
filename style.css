@@ -154,6 +154,19 @@ a { color: inherit; }
 .btn-primary:hover { transform: translateY(-1px); opacity: 0.92; }
 .btn-ghost { border: 1px solid var(--line); color: var(--text); }
 .btn-ghost:hover { border-color: var(--blue); }
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-mono);
+  transition: border-color 0.15s;
+}
+.btn-sm:hover { border-color: var(--blue); }
+.btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ---------- Console ---------- */
 .console {
@@ -960,7 +973,6 @@ a { color: inherit; }
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 8px;
-  overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,.5);
 }
 .ct-combo-dropdown.open { display: block; }
@@ -975,10 +987,12 @@ a { color: inherit; }
   font-family: var(--font-mono);
   font-size: 0.78rem;
   outline: none;
+  border-radius: 8px 8px 0 0;
 }
 .ct-combo-options {
   max-height: 220px;
   overflow-y: auto;
+  border-radius: 0 0 8px 8px;
 }
 .ct-combo-opt {
   padding: 6px 10px;
