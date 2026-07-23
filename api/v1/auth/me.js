@@ -14,10 +14,12 @@ module.exports = async (req, res) => {
   const session = await kv.get(`session:${token}`);
   if (!session) { json(res, 401, { error: 'Invalid or expired session.' }); return; }
 
-  const userKey = await kv.get(`userkey:${session.user_id}`);
+  const keys = (await kv.get(`userkeys:${session.user_id}`)) || [];
 
   json(res, 200, {
-    user: { id: session.user_id, email: session.email },
-    api_key: userKey || null,
+    email: session.email,
+    user_id: session.user_id,
+    created_at: session.created_at || null,
+    keys,
   });
 };

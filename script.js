@@ -21,7 +21,7 @@ async function checkSession() {
   const token = localStorage.getItem('nx_token');
   if (!token) { currentUser = null; return; }
   const data = await api('/api/v1/auth/me');
-  if (data.user) { currentUser = data.user; }
+  if (data.email) { currentUser = data; }
   else { localStorage.removeItem('nx_token'); currentUser = null; }
 }
 
@@ -98,6 +98,14 @@ function renderHome() {
     if (i <= text.length) { target.textContent = text.slice(0, i); i++; setTimeout(step, 28); }
   }
   setTimeout(step, 900);
+
+  const actions = document.querySelector('.hero-actions');
+  if (actions && currentUser) {
+    actions.innerHTML = `
+      <a href="#/chat" class="btn btn-primary" data-nav>Open Chat</a>
+      <a href="#/dashboard" class="btn btn-ghost" data-nav>Dashboard</a>
+    `;
+  }
 }
 
 async function renderModels() {
@@ -177,21 +185,35 @@ async function renderDashboard() {
   const el = document.getElementById('dashboardContent');
   const data = await api('/api/v1/auth/me');
   const keys = data.keys || [];
+  const activeKeys = keys.filter(k => k.is_active);
+  const lastUsed = keys.filter(k => k.last_used_at).sort((a, b) => new Date(b.last_used_at) - new Date(a.last_used_at))[0];
+
+  let modelsCount = 0;
+  try {
+    const modelsData = await api('/api/v1/models');
+    if (modelsData.models) modelsCount = modelsData.models.length;
+  } catch {}
+
   el.innerHTML = `
     <div style="text-align:center;margin-bottom:28px">
-      <p class="text-muted" style="font-size:0.9rem">${esc(data.email)}</p>
+      <p style="font-size:1.1rem;font-weight:600;font-family:var(--font-display);margin:0">${esc(data.email)}</p>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:4px">Joined ${new Date(data.created_at || Date.now()).toLocaleDateString()}</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:32px">
       <div class="page-card" style="padding:20px;text-align:center;margin:0">
         <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${keys.length}</div>
-        <div class="text-muted" style="font-size:0.82rem">API Keys</div>
+        <div class="text-muted" style="font-size:0.82rem">Total Keys</div>
       </div>
       <div class="page-card" style="padding:20px;text-align:center;margin:0">
-        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${keys.filter(k => k.is_active).length}</div>
+        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${activeKeys.length}</div>
         <div class="text-muted" style="font-size:0.82rem">Active Keys</div>
       </div>
+      <div class="page-card" style="padding:20px;text-align:center;margin:0">
+        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${modelsCount}</div>
+        <div class="text-muted" style="font-size:0.82rem">Available Models</div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px">
       <a href="#/keys" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
         <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Manage Keys</h3>
         <p class="text-muted" style="margin:0;font-size:0.82rem">Generate, edit, enable or delete your API keys</p>
@@ -201,6 +223,13 @@ async function renderDashboard() {
         <p class="text-muted" style="margin:0;font-size:0.82rem">Test models interactively with full parameter control</p>
       </a>
     </div>
+    ${lastUsed ? `
+    <div class="page-card" style="padding:16px 20px;margin:0">
+      <p style="margin:0;font-size:0.85rem;color:var(--text-muted)">
+        Last key usage: ${esc(lastUsed.label || lastUsed.key)} —
+        ${new Date(lastUsed.last_used_at).toLocaleString()}
+      </p>
+    </div>` : ''}
   `;
 }
 

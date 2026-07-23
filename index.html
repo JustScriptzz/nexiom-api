@@ -116,35 +116,118 @@
 
       <div class="docs-section">
         <h3>Authentication</h3>
-        <p>Include your API key in the <code>Authorization</code> header:</p>
+        <p>Every request requires an API key sent via the <code>Authorization</code> header. Generate keys from the <a href="#/keys" data-nav>Keys</a> page after signing in.</p>
         <pre class="code-block"><code>Authorization: Bearer &lt;your-api-key&gt;</code></pre>
-        <p>Sign up for an account to generate your own API key.</p>
+        <p>Each key can be labeled, enabled/disabled, and restricted to specific models. There is no separate secret — the key string is shown once at creation.</p>
       </div>
 
       <div class="docs-section">
         <h3>Chat Completions</h3>
         <p><code>POST /api/v1/chat/completions</code></p>
+        <p>Send a conversation and get a model reply. The endpoint accepts the same request body format as the OpenAI Chat Completions API.</p>
+
+        <h4>Request body</h4>
+        <table class="params-table">
+          <tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          <tr><td><code>messages</code></td><td>array</td><td>—</td><td><strong>Required.</strong> Array of message objects with <code>role</code> (<code>user</code>, <code>assistant</code>, <code>system</code>) and <code>content</code>.</td></tr>
+          <tr><td><code>model</code></td><td>string</td><td>auto</td><td>Model ID to use. If omitted or <code>nexiom-default</code>, each provider's default model is used.</td></tr>
+          <tr><td><code>stream</code></td><td>boolean</td><td>false</td><td>When <code>true</code>, the response is sent as Server-Sent Events (SSE).</td></tr>
+          <tr><td><code>temperature</code></td><td>number</td><td>1.0</td><td>Sampling temperature (0–2). Higher values make output more random.</td></tr>
+          <tr><td><code>max_tokens</code></td><td>integer</td><td>varies</td><td>Maximum number of tokens to generate.</td></tr>
+          <tr><td><code>top_p</code></td><td>number</td><td>1.0</td><td>Nucleus sampling parameter.</td></tr>
+        </table>
+
+        <h4>Example request</h4>
         <pre class="code-block"><code>curl https://nexiom.dev/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $NEXIOM_KEY" \
   -d '{
+    "model": "deepseek-v4-flash-free",
     "messages": [
-      { "role": "user", "content": "Hello!" }
-    ]
+      { "role": "system", "content": "You are a helpful assistant." },
+      { "role": "user", "content": "What is Nexiom?" }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 512
   }'</code></pre>
+
+        <h4>Response</h4>
+        <p>A standard OpenAI-style chat completions object is returned:</p>
+        <pre class="code-block"><code>{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "model": "deepseek-v4-flash-free",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Nexiom is a resilient AI inference endpoint..."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 28,
+    "completion_tokens": 42,
+    "total_tokens": 70
+  }
+}</code></pre>
+      </div>
+
+      <div class="docs-section">
+        <h3>Streaming</h3>
+        <p>Set <code>"stream": true</code> in the request body to receive the response as SSE events. Each event contains a delta:</p>
+        <pre class="code-block"><code>data: {"choices":[{"delta":{"content":"Hello"}}]}
+
+data: {"choices":[{"delta":{"content":" world"}}]}
+
+data: [DONE]</code></pre>
+        <p>Non-streaming and streaming work for both key-authenticated and playground (session-authenticated) requests.</p>
+      </div>
+
+      <div class="docs-section">
+        <h3>Model Routing &amp; Fallback</h3>
+        <p>Nexiom chains multiple inference providers behind a single endpoint. When your request arrives:</p>
+        <ol class="docs-list">
+          <li>It is sent to the first healthy provider in the chain.</li>
+          <li>If that provider returns a 429 (rate-limited) or 5xx error, the request moves to the next provider.</li>
+          <li>This repeats until one provider succeeds or all providers are exhausted.</li>
+        </ol>
+        <p>You never see the fallback — your code gets a single response. If every provider fails, you receive a 502 with details.</p>
       </div>
 
       <div class="docs-section">
         <h3>Available Models</h3>
-        <p>Check the <a href="#/models" data-nav>Models</a> page for the currently available inference models.</p>
+        <p>Browse all available models on the <a href="#/models" data-nav>Models</a> page. Models are fetched live from each configured provider.</p>
       </div>
 
-      <div class="tabs" id="codeTabs">
-        <button class="tab active" data-tab="curl">curl</button>
-        <button class="tab" data-tab="js">JavaScript</button>
-        <button class="tab" data-tab="py">Python</button>
+      <div class="docs-section">
+        <h3>Errors</h3>
+        <table class="params-table">
+          <tr><th>Status</th><th>Meaning</th></tr>
+          <tr><td>400</td><td>Bad request — missing or invalid fields in the request body.</td></tr>
+          <tr><td>401</td><td>Unauthorized — missing or invalid API key.</td></tr>
+          <tr><td>402</td><td>Key disabled or model not allowed — the key exists but is inactive or restricted.</td></tr>
+          <tr><td>429</td><td>Rate limited — too many requests; try again later.</td></tr>
+          <tr><td>502</td><td>All inference paths failed — every provider returned an error.</td></tr>
+        </table>
+        <pre class="code-block"><code>{
+  "error": {
+    "message": "Key is disabled.",
+    "type": "key_disabled"
+  }
+}</code></pre>
       </div>
-      <pre class="code-block" data-panel="curl"><code>curl https://nexiom.dev/api/v1/chat/completions \
+
+      <div class="docs-section">
+        <h3>Code Examples</h3>
+        <div class="tabs" id="codeTabs">
+          <button class="tab active" data-tab="curl">curl</button>
+          <button class="tab" data-tab="js">JavaScript</button>
+          <button class="tab" data-tab="py">Python</button>
+        </div>
+        <pre class="code-block" data-panel="curl"><code>curl https://nexiom.dev/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $NEXIOM_KEY" \
   -d '{
@@ -152,7 +235,7 @@
       { "role": "user", "content": "Explain Nexiom in one line." }
     ]
   }'</code></pre>
-      <pre class="code-block hidden" data-panel="js"><code>const res = await fetch("https://nexiom.dev/api/v1/chat/completions", {
+        <pre class="code-block hidden" data-panel="js"><code>const res = await fetch("https://nexiom.dev/api/v1/chat/completions", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -164,13 +247,14 @@
 });
 const data = await res.json();
 console.log(data.choices[0].message.content);</code></pre>
-      <pre class="code-block hidden" data-panel="py"><code>import os, requests
+        <pre class="code-block hidden" data-panel="py"><code>import os, requests
 res = requests.post(
     "https://nexiom.dev/api/v1/chat/completions",
     headers={"Authorization": f"Bearer {os.environ['NEXIOM_KEY']}"},
     json={"messages": [{"role": "user", "content": "Explain Nexiom in one line."}]},
 )
 print(res.json()["choices"][0]["message"]["content"])</code></pre>
+      </div>
     </div>
   </section>
 </script>

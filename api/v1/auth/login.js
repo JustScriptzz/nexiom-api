@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
   const token = generateToken();
   const expires_at = Math.floor(Date.now() / 1000) + SESSION_TTL;
 
-  await kv.set(`session:${token}`, { user_id: user.id, email }, { ex: SESSION_TTL });
+  await kv.set(`session:${token}`, { user_id: user.id, email, created_at: user.created_at }, { ex: SESSION_TTL });
 
   json(res, 200, {
     user: { id: user.id, email, created_at: user.created_at },
