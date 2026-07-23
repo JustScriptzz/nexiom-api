@@ -130,21 +130,19 @@ module.exports = async (req, res) => {
 
   const attempts = [];
 
-  for (const path of candidates) {
+  for (const [i, path] of candidates.entries()) {
     try {
       const result = await callPath(path, body);
 
-      if (result.status === 429 || result.status >= 500) {
+      if (!result.ok && result.status >= 500) {
+        attempts.push({ path: path.label, status: result.status });
+        if (i < candidates.length - 1) continue;
+      } else if (!result.ok) {
         attempts.push({ path: path.label, status: result.status });
         continue;
       }
 
-      if (!result.ok) {
-        attempts.push({ path: path.label, status: result.status });
-        continue;
-      }
-
-      res.status(200).json(result.json);
+      res.status(result.ok ? 200 : result.status).json(result.json);
       return;
     } catch (err) {
       attempts.push({ path: path.label, error: err && err.name === "AbortError" ? "timeout" : "network error" });

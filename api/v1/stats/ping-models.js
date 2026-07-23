@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
       };
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 10000);
+      const timer = setTimeout(() => controller.abort(), 25000);
       try {
         const start = Date.now();
         const resp = await fetch(cfg.url, {

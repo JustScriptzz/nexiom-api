@@ -151,7 +151,7 @@ module.exports = async (req, res) => {
 
   const attempts = [];
 
-  for (const path of candidates) {
+  for (const [i, path] of candidates.entries()) {
     try {
       let result;
       if (isStream) {
@@ -159,11 +159,10 @@ module.exports = async (req, res) => {
         if (result.ok) return;
       } else {
         result = await callPath(path, body);
-        if (result.status === 429 || result.status >= 500) {
+        if (!result.ok && result.status >= 500) {
           attempts.push({ path: path.label, status: result.status });
-          continue;
-        }
-        if (!result.ok) {
+          if (i < candidates.length - 1) continue;
+        } else if (!result.ok) {
           attempts.push({ path: path.label, status: result.status });
           continue;
         }
