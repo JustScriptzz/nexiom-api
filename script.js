@@ -70,6 +70,8 @@ async function renderRoute() {
       if (currentUser) { navigate('/dashboard'); return; }
       app.innerHTML = html('tmpl-signup'); renderSignup(); break;
     case '/keys':
+      if (!currentUser) { navigate('/login'); return; }
+      app.innerHTML = html('tmpl-keys'); renderKeys(); break;
     case '/dashboard':
       if (!currentUser) { navigate('/login'); return; }
       app.innerHTML = html('tmpl-dashboard'); renderDashboard(); break;
@@ -179,7 +181,38 @@ function renderSignup() {
   });
 }
 
-function renderDashboard() {
+async function renderDashboard() {
+  const el = document.getElementById('dashboardContent');
+  const data = await api('/api/v1/auth/me');
+  const keys = data.keys || [];
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:28px">
+      <p class="text-muted" style="font-size:0.9rem">${esc(data.email)}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px">
+      <div class="page-card" style="padding:20px;text-align:center;margin:0">
+        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${keys.length}</div>
+        <div class="text-muted" style="font-size:0.82rem">API Keys</div>
+      </div>
+      <div class="page-card" style="padding:20px;text-align:center;margin:0">
+        <div style="font-size:2rem;font-weight:700;font-family:var(--font-display)">${keys.filter(k => k.is_active).length}</div>
+        <div class="text-muted" style="font-size:0.82rem">Active Keys</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <a href="#/keys" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
+        <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Manage Keys</h3>
+        <p class="text-muted" style="margin:0;font-size:0.82rem">Generate, edit, enable or delete your API keys</p>
+      </a>
+      <a href="#/playground" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
+        <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Playground</h3>
+        <p class="text-muted" style="margin:0;font-size:0.82rem">Test models interactively with full parameter control</p>
+      </a>
+    </div>
+  `;
+}
+
+function renderKeys() {
   const list = document.getElementById('keyList');
   const genBtn = document.getElementById('genKeyBtn');
   const msgEl = document.getElementById('keyMessage');

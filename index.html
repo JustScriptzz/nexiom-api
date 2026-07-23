@@ -25,6 +25,7 @@
       <a href="#/" data-nav>Home</a>
       <a href="#/models" data-nav>Models</a>
       <a href="#/docs" data-nav>Docs</a>
+      <a href="#/dashboard" data-nav class="nav-authed hidden" id="navDash">Dashboard</a>
       <a href="#/keys" data-nav class="nav-authed hidden" id="navKeys">Keys</a>
       <a href="#/playground" data-nav class="nav-authed hidden" id="navPlay">Playground</a>
       <a href="#/login" data-nav class="nav-auth" id="navAuth">Log in</a>
@@ -222,20 +223,22 @@ print(res.json()["choices"][0]["message"]["content"])</code></pre>
   <section class="page-section">
     <div class="page-card dashboard-card">
       <p class="eyebrow eyebrow-center">Dashboard</p>
+      <h2>Welcome back</h2>
+      <div id="dashboardContent"></div>
+    </div>
+  </section>
+</script>
+
+<script type="text/template" id="tmpl-keys">
+  <section class="page-section">
+    <div class="page-card dashboard-card">
+      <p class="eyebrow eyebrow-center">Dashboard</p>
       <h2>Manage API Keys</h2>
-      <div id="dashboardContent">
-        <div class="key-section">
-          <p class="text-muted">Create and manage API keys. Each key can be labeled, enabled/disabled, and restricted to specific models.</p>
-          <div class="key-list" id="keyList"></div>
-          <button class="btn btn-primary" id="genKeyBtn" style="margin-top:16px">+ Generate New Key</button>
-          <p class="auth-success hidden" id="keyMessage" style="margin-top:12px"></p>
-        </div>
-        <hr class="section-divider">
-        <div class="playground-section">
-          <h3>Playground</h3>
-          <p class="text-muted">Test models interactively with full parameter control.</p>
-          <a href="#/playground" class="btn btn-primary" data-nav>Open Playground</a>
-        </div>
+      <div class="key-section">
+        <p class="text-muted">Create and manage API keys. Each key can be labeled, enabled/disabled, and restricted to specific models.</p>
+        <div class="key-list" id="keyList"></div>
+        <button class="btn btn-primary" id="genKeyBtn" style="margin-top:16px">+ Generate New Key</button>
+        <p class="auth-success hidden" id="keyMessage" style="margin-top:12px"></p>
       </div>
     </div>
   </section>
