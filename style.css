@@ -1109,6 +1109,23 @@ a { color: inherit; }
 .footer-dot { color: var(--line); }
 .route-chat .footer { display: none; }
 
+.footer-credit {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 24px 30px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  border-bottom: 0;
+  margin-top: -10px;
+}
+.footer-credit a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.footer-credit a:hover {
+  text-decoration: underline;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {
   .nav-links { gap: 16px; }
