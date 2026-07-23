@@ -30,6 +30,7 @@ module.exports = async (req, res) => {
 
     let provider = 'unknown';
     try { provider = new URL(url).hostname; } catch {}
+    if (provider.includes('groq')) continue;
 
     const modelsUrl = deriveModelsUrl(url);
 

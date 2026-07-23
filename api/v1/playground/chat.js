@@ -9,7 +9,10 @@ function loadPaths() {
     url: process.env[`PATH_${id}_URL`],
     key: process.env[`PATH_${id}_KEY`],
     model: process.env[`PATH_${id}_MODEL`],
-  })).filter((p) => p.url && p.key);
+  })).filter((p) => {
+    if (!p.url || !p.key) return false;
+    try { return !new URL(p.url).hostname.includes('groq'); } catch { return true; }
+  });
 }
 
 async function callPath(path, body) {
