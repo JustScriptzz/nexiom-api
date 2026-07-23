@@ -3,7 +3,7 @@ const { Redis } = require('@upstash/redis');
 const PATH_IDS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const REQUEST_TIMEOUT_MS = 20000;
 const OPencodeZenFree = [
-  'deepseek-v4-flash-free', 'gpt-5-nano', 'big-pickle',
+  'deepseek-v4-flash-free', 'big-pickle',
   'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
   'north-mini-code-free', 'nemotron-3-ultra-free',
   'nemotron-3-super-free', 'hy3-free',

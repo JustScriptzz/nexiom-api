@@ -1,7 +1,7 @@
 const { handleOptions, json } = require('../../lib/db');
 
 const OPencodeZenFree = [
-  'deepseek-v4-flash-free', 'gpt-5-nano', 'big-pickle',
+  'deepseek-v4-flash-free', 'big-pickle',
   'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
   'north-mini-code-free', 'nemotron-3-ultra-free',
   'nemotron-3-super-free', 'hy3-free',
@@ -57,7 +57,7 @@ module.exports = async (req, res) => {
           if (Array.isArray(list)) {
             for (const m of list) {
               const modelId = m.id || m.model || m.name;
-              if (modelId && !/claude/i.test(modelId)) {
+              if (modelId && !/claude|gpt-5-nano/i.test(modelId)) {
                 if (id === 'C' && !OPencodeZenFree.includes(modelId)) continue;
                 results.push({
                   id: modelId,
