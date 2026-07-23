@@ -664,23 +664,75 @@ a { color: inherit; }
   font-family: var(--font-mono);
 }
 .ct-label-sm { min-width: 0; }
-.ct-label-model {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-}
-.ct-search {
+.ct-label-model { flex-direction: column; align-items: stretch; gap: 4px; position: relative; }
+.ct-combo { position: relative; }
+.ct-combo-trigger {
+  display: block;
+  width: 200px;
   padding: 5px 8px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ct-combo-trigger:focus, .ct-combo-trigger:hover { border-color: var(--blue); }
+.ct-combo-trigger::after {
+  content: '\25BC';
+  float: right;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+.ct-combo-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  width: 260px;
+  margin-top: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.ct-combo-dropdown.open { display: block; }
+.ct-combo-search {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
   outline: none;
 }
-.ct-search:focus { border-color: var(--blue); }
-.ct-label-model .ct-select { max-width: none; width: 260px; }
+.ct-combo-options {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.ct-combo-opt {
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ct-combo-opt:hover, .ct-combo-opt.selected { background: var(--blue); color: #fff; }
+.ct-select-ghost { display: none; }
 .ct-select, .ct-input {
   padding: 5px 8px;
   background: var(--surface);

@@ -255,8 +255,14 @@ print(res.json()["choices"][0]["message"]["content"])</code></pre>
       <div class="chat-toolbar" id="chatToolbar">
         <label class="ct-label ct-label-model">
           Model
-          <input type="text" class="ct-search" id="chatModelSearch" placeholder="Search models..." autocomplete="off">
-          <select class="ct-select" id="chatModel" size="6"></select>
+          <div class="ct-combo" id="chatModelCombo">
+            <button type="button" class="ct-combo-trigger" id="chatModelTrigger">Auto</button>
+            <div class="ct-combo-dropdown" id="chatModelDropdown">
+              <input type="text" class="ct-combo-search" id="chatModelSearch" placeholder="Search models..." autocomplete="off">
+              <div class="ct-combo-options" id="chatModelOptions"></div>
+            </div>
+            <select class="ct-select-ghost" id="chatModel"></select>
+          </div>
         </label>
         <label class="ct-label ct-label-sm">
           Temp

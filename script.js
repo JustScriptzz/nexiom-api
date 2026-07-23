@@ -314,25 +314,71 @@ async function renderChat() {
 
   tempRange.addEventListener('input', () => { tempVal.textContent = tempRange.value; });
 
-  const searchInput = document.getElementById('chatModelSearch');
+  const comboTrigger = document.getElementById('chatModelTrigger');
+  const comboDropdown = document.getElementById('chatModelDropdown');
+  const comboSearch = document.getElementById('chatModelSearch');
+  const comboOptions = document.getElementById('chatModelOptions');
   let allModels = [];
+
+  function populateOptions(filter) {
+    const q = (filter || '').toLowerCase();
+    comboOptions.innerHTML = '<div class="ct-combo-opt" data-value="">Auto</div>' +
+      allModels
+        .filter((m) => !q || m.id.toLowerCase().includes(q))
+        .map((m) => `<div class="ct-combo-opt${m.id === modelSel.value ? ' selected' : ''}" data-value="${m.id}">${esc(m.id)}</div>`)
+        .join('');
+  }
+
+  function closeCombo() {
+    comboDropdown.classList.remove('open');
+    comboSearch.value = '';
+  }
+
+  function selectModel(value) {
+    modelSel.value = value;
+    comboTrigger.textContent = value || 'Auto';
+    closeCombo();
+  }
+
+  comboTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = comboDropdown.classList.toggle('open');
+    if (isOpen) {
+      populateOptions();
+      comboSearch.focus();
+    }
+  });
+
+  comboDropdown.addEventListener('click', (e) => {
+    const opt = e.target.closest('.ct-combo-opt');
+    if (!opt) return;
+    selectModel(opt.dataset.value);
+  });
+
+  comboSearch.addEventListener('input', () => populateOptions(comboSearch.value));
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.ct-combo')) closeCombo();
+  });
+
+  comboSearch.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCombo();
+    if (e.key === 'Enter') {
+      const first = comboOptions.querySelector('.ct-combo-opt:not([data-value=""])');
+      if (first) selectModel(first.dataset.value);
+    }
+  });
 
   const modelsData = await api('/api/v1/models');
   if (modelsData.models && modelsData.models.length > 0) {
     const seen = new Set();
     allModels = modelsData.models.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
     modelSel.innerHTML = '<option value="">Auto</option>' + allModels.map((m) => `<option value="${m.id}">${m.id}</option>`).join('');
+    populateOptions();
   } else {
     modelSel.innerHTML = '<option value="">Auto</option>';
+    populateOptions();
   }
-
-  searchInput.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase();
-    modelSel.innerHTML = '<option value="">Auto</option>' +
-      allModels.filter((m) => m.id.toLowerCase().includes(q))
-        .map((m) => `<option value="${m.id}">${m.id}</option>`)
-        .join('');
-  });
 
   function addMsg(role, content) {
     const div = document.createElement('div');
