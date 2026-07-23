@@ -7,8 +7,7 @@
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
-  <a href="#how-it-works">How it works</a> ·
-  <a href="#deploy">Deploy</a>
+  <a href="#how-it-works">How it works</a>
 </p>
 
 ---
@@ -52,27 +51,6 @@ nexiom-api/
 ├── index.html, style.css, script.js, logo.png   → the public site
 └── api/v1/chat/completions.js                   → the gateway
 ```
-
-## Deploy
-
-1. On vercel.com → **Add New Project** → import this repo. Zero build
-   config needed.
-2. In **Settings → Environment Variables**, configure up to 5 inference
-   paths — Nexiom tries them in order and only uses the ones that are set:
-
-   | Variable | Meaning |
-   |---|---|
-   | `PATH_A_URL`, `PATH_A_KEY` | first path's endpoint + key |
-   | `PATH_B_URL`, `PATH_B_KEY` | second path |
-   | `PATH_C_URL`, `PATH_C_KEY` | third path |
-   | `PATH_D_URL`, `PATH_D_KEY` | fourth path |
-   | `PATH_E_URL`, `PATH_E_KEY` | fifth path |
-   | `PATH_A_MODEL` … `PATH_E_MODEL` | optional, forces a model on that path |
-
-   Also set `NEXIOM_API_KEY` — the key your own users will send you. Pick
-   any long random string; it isn't tied to a provider.
-
-3. Redeploy after saving env vars.
 
 ## Calling it
 
