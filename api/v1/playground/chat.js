@@ -2,8 +2,14 @@ const { getKv, handleOptions, json } = require('../../lib/db');
 
 const PATH_IDS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 const REQUEST_TIMEOUT_MS = 30000;
+const OPencodeZenFree = [
+  'deepseek-v4-flash-free', 'gpt-5-nano', 'big-pickle',
+  'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
+  'north-mini-code-free', 'nemotron-3-ultra-free',
+  'nemotron-3-super-free', 'hy3-free',
+];
 
-function loadPaths() {
+function loadPaths(reqModel) {
   return PATH_IDS.map((id) => ({
     label: `path-${id.toLowerCase()}`,
     url: process.env[`PATH_${id}_URL`],
@@ -11,7 +17,10 @@ function loadPaths() {
     model: process.env[`PATH_${id}_MODEL`],
   })).filter((p) => {
     if (!p.url || !p.key) return false;
-    try { return !new URL(p.url).hostname.includes('groq'); } catch { return true; }
+    try { if (new URL(p.url).hostname.includes('groq')) return false; } catch {}
+    const isZen = p.label === 'path-c';
+    if (isZen && reqModel && !OPencodeZenFree.includes(reqModel)) return false;
+    return true;
   });
 }
 
@@ -61,7 +70,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const candidates = loadPaths();
+  const candidates = loadPaths(body.model);
   if (candidates.length === 0) {
     json(res, 503, { error: 'No inference paths are configured yet.' });
     return;

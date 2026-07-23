@@ -1,5 +1,12 @@
 const { handleOptions, json } = require('../../lib/db');
 
+const OPencodeZenFree = [
+  'deepseek-v4-flash-free', 'gpt-5-nano', 'big-pickle',
+  'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
+  'north-mini-code-free', 'nemotron-3-ultra-free',
+  'nemotron-3-super-free', 'hy3-free',
+];
+
 function deriveModelsUrl(chatUrl) {
   try {
     const u = new URL(chatUrl);
@@ -51,6 +58,7 @@ module.exports = async (req, res) => {
             for (const m of list) {
               const modelId = m.id || m.model || m.name;
               if (modelId) {
+                if (id === 'C' && !OPencodeZenFree.includes(modelId)) continue;
                 results.push({
                   id: modelId,
                   provider,
