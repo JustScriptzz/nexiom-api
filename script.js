@@ -107,23 +107,14 @@ async function renderModels() {
     list.innerHTML = '<p class="text-muted">No models are currently configured.</p>';
     return;
   }
-  const grouped = {};
-  for (const m of data.models) {
-    if (!grouped[m.provider]) grouped[m.provider] = [];
-    grouped[m.provider].push(m);
-  }
-  list.innerHTML = Object.entries(grouped).map(([provider, models]) => `
-    <div class="provider-group">
-      <div class="provider-header">${provider}</div>
-      ${models.map((m) => `
-        <div class="model-card${m.default ? ' model-default' : ''}">
-          <span class="model-name">${m.id}</span>
-          <span class="model-badge">${m.path}</span>
-          ${m.default ? '<span class="model-badge model-badge-default">default</span>' : ''}
-        </div>
-      `).join('')}
+  const seen = new Set();
+  const models = data.models.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
+  list.innerHTML = `<div class="models-grid-flat">${models.map((m) => `
+    <div class="model-card${m.default ? ' model-default' : ''}">
+      <span class="model-name">${m.id}</span>
+      ${m.default ? '<span class="model-badge model-badge-default">default</span>' : ''}
     </div>
-  `).join('');
+  `).join('')}</div>`;
 }
 
 function renderDocs() {
