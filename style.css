@@ -560,7 +560,7 @@ a { color: inherit; }
 .chat-page {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 80px);
   max-width: 800px;
   margin: 0 auto;
   padding: 0 20px;
@@ -812,6 +812,7 @@ a { color: inherit; }
 }
 .footer-mark { width: 18px; height: 18px; border-radius: 5px; opacity: 0.8; }
 .footer-dot { color: var(--line); }
+.route-chat .footer { display: none; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {

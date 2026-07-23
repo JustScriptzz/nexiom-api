@@ -59,6 +59,7 @@ async function renderRoute() {
   await checkSession();
   updateNav();
 
+  document.body.classList.remove('route-chat');
   switch (route) {
     case '/': case '': app.innerHTML = html('tmpl-home'); renderHome(); break;
     case '/models': app.innerHTML = html('tmpl-models'); renderModels(); break;
@@ -80,6 +81,7 @@ async function renderRoute() {
     case '/chat':
     case '/playground':
       if (!currentUser) { navigate('/login'); return; }
+      document.body.classList.add('route-chat');
       app.innerHTML = html('tmpl-chat'); renderChat(); break;
     default:
       app.innerHTML = `<section class="page-section"><div class="page-card"><h2>404</h2><p class="text-muted">Page not found.</p><a href="#/" data-nav class="btn btn-primary">Go home</a></div></section>`;
