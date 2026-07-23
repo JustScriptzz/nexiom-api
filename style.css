@@ -414,27 +414,54 @@ a { color: inherit; }
 .models-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 24px;
+  gap: 24px;
+  margin-top: 12px;
+}
+.provider-group {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.provider-header {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .model-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
 }
-.model-name { font-family: var(--font-mono); font-size: 0.9rem; flex: 1; }
-.model-provider { color: var(--text-dim); font-size: 0.82rem; }
+.model-card:last-child { border-bottom: none; }
+.model-card.model-default { background: rgba(61,123,255,0.05); }
+.model-name {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text);
+  flex: 1;
+  text-align: left;
+  word-break: break-all;
+}
 .model-badge {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  padding: 4px 10px;
+  font-size: 0.7rem;
+  padding: 3px 8px;
   border-radius: 100px;
   background: var(--line);
   color: var(--text-muted);
+  white-space: nowrap;
+}
+.model-badge-default {
+  background: var(--blue);
+  color: #fff;
 }
 
 /* ---------- Docs ---------- */
