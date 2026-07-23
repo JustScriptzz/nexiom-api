@@ -17,20 +17,29 @@
 
 <header class="nav">
   <div class="nav-inner">
-    <a class="brand" href="#top">
+    <a class="brand" href="#/" data-nav>
       <img src="logo.png" alt="Nexiom" class="brand-mark">
       <span class="brand-name">Nexiom</span>
     </a>
-    <nav class="nav-links">
-      <a href="#how">How it works</a>
-      <a href="#quickstart">Quickstart</a>
-      <a href="#access" class="nav-cta">Get access</a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#/" data-nav>Home</a>
+      <a href="#/models" data-nav>Models</a>
+      <a href="#/docs" data-nav>Docs</a>
+      <a href="#/login" data-nav class="nav-auth" id="navAuth">Log in</a>
     </nav>
   </div>
 </header>
 
-<main id="top">
+<main id="app"></main>
 
+<footer class="footer">
+  <img src="logo.png" alt="Nexiom" class="footer-mark">
+  <span>Nexiom</span>
+  <span class="footer-dot">·</span>
+  <span>a small, resilient AI endpoint</span>
+</footer>
+
+<script type="text/template" id="tmpl-home">
   <section class="hero">
     <div class="hero-bg" aria-hidden="true"></div>
     <div class="hero-inner">
@@ -38,10 +47,9 @@
       <h1>Ask it anything.<br>It answers <em>every</em> time.</h1>
       <p class="hero-sub">Nexiom is a single API endpoint in front of a resilient chain of inference paths. If one is busy, your request quietly moves to the next. Your code never has to know.</p>
       <div class="hero-actions">
-        <a href="#quickstart" class="btn btn-primary">Read the quickstart</a>
-        <a href="#access" class="btn btn-ghost">Request an API key</a>
+        <a href="#/docs" class="btn btn-primary">Read the docs</a>
+        <a href="#/signup" class="btn btn-ghost">Create an account</a>
       </div>
-
       <div class="console" role="img" aria-label="Terminal showing an example Nexiom API request and response">
         <div class="console-bar">
           <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
@@ -59,56 +67,80 @@
   <section class="how" id="how">
     <p class="eyebrow eyebrow-center">Every request, start to finish</p>
     <h2>What happens between your call and your answer</h2>
-
     <div class="steps">
       <div class="step">
         <span class="step-num">01</span>
         <h3>You send one request</h3>
-        <p>One base URL, one key, the same request body you'd send to any chat completions endpoint. No provider names to memorize, no fallback logic to write yourself.</p>
+        <p>One base URL, one key, the same request body you'd send to any chat completions endpoint.</p>
       </div>
       <div class="step">
         <span class="step-num">02</span>
         <h3>Nexiom finds a healthy path</h3>
-        <p>Behind the scenes, Nexiom holds open several independent inference paths and checks which one is fastest and free right now, in the time it takes to open a socket.</p>
+        <p>Behind the scenes, Nexiom holds open several independent inference paths and finds the fastest one.</p>
       </div>
       <div class="step">
         <span class="step-num">03</span>
         <h3>You get an answer, not an error</h3>
-        <p>If a path is throttled or down, Nexiom re-routes before it ever reaches your code. From where you're sitting, the response just shows up.</p>
-      </div>
-    </div>
-
-    <div class="routeviz-wrap">
-      <p class="routeviz-caption">A request finding its way through — one path stalls, another one carries it.</p>
-      <div class="routeviz" id="routeviz">
-        <div class="rv-node rv-you">you</div>
-        <div class="rv-line rv-line-in"><span class="rv-packet"></span></div>
-        <div class="rv-node rv-nexiom">
-          <img src="logo.png" alt="" class="rv-nexiom-mark">
-        </div>
-        <div class="rv-paths">
-          <div class="rv-path" data-path="0"><span class="rv-line"><span class="rv-packet"></span></span><span class="rv-node rv-endpoint">path A</span></div>
-          <div class="rv-path" data-path="1"><span class="rv-line"><span class="rv-packet"></span></span><span class="rv-node rv-endpoint">path B</span></div>
-          <div class="rv-path" data-path="2"><span class="rv-line"><span class="rv-packet"></span></span><span class="rv-node rv-endpoint">path C</span></div>
-        </div>
-        <div class="rv-line rv-line-out"><span class="rv-packet" id="rvOutPacket"></span></div>
-        <div class="rv-node rv-you rv-you-out">answer</div>
+        <p>If a path is throttled or down, Nexiom re-routes before it ever reaches your code.</p>
       </div>
     </div>
   </section>
+</script>
 
-  <section class="quickstart" id="quickstart">
-    <p class="eyebrow eyebrow-center">Quickstart</p>
-    <h2>Drop-in wherever you already call a chat endpoint</h2>
-    <p class="quickstart-sub">Nexiom speaks the same chat-completions shape you already know. Point your existing client at it and go.</p>
-
-    <div class="tabs" id="codeTabs">
-      <button class="tab active" data-tab="curl">curl</button>
-      <button class="tab" data-tab="js">JavaScript</button>
-      <button class="tab" data-tab="py">Python</button>
+<script type="text/template" id="tmpl-models">
+  <section class="page-section">
+    <div class="page-card">
+      <p class="eyebrow eyebrow-center">Available Models</p>
+      <h2>Inference paths currently online</h2>
+      <div id="modelsList" class="models-grid">
+        <p class="text-muted">Loading models...</p>
+      </div>
     </div>
+  </section>
+</script>
 
-    <pre class="code-block" data-panel="curl"><code>curl https://nexiom.dev/api/v1/chat/completions \
+<script type="text/template" id="tmpl-docs">
+  <section class="page-section">
+    <div class="page-card docs-card">
+      <p class="eyebrow eyebrow-center">Documentation</p>
+      <h2>API Reference</h2>
+
+      <div class="docs-section">
+        <h3>Base URL</h3>
+        <pre class="code-block"><code>https://nexiom.dev/api/v1</code></pre>
+      </div>
+
+      <div class="docs-section">
+        <h3>Authentication</h3>
+        <p>Include your API key in the <code>Authorization</code> header:</p>
+        <pre class="code-block"><code>Authorization: Bearer &lt;your-api-key&gt;</code></pre>
+        <p>Sign up for an account to generate your own API key.</p>
+      </div>
+
+      <div class="docs-section">
+        <h3>Chat Completions</h3>
+        <p><code>POST /api/v1/chat/completions</code></p>
+        <pre class="code-block"><code>curl https://nexiom.dev/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $NEXIOM_KEY" \
+  -d '{
+    "messages": [
+      { "role": "user", "content": "Hello!" }
+    ]
+  }'</code></pre>
+      </div>
+
+      <div class="docs-section">
+        <h3>Available Models</h3>
+        <p>Check the <a href="#/models" data-nav>Models</a> page for the currently available inference models.</p>
+      </div>
+
+      <div class="tabs" id="codeTabs">
+        <button class="tab active" data-tab="curl">curl</button>
+        <button class="tab" data-tab="js">JavaScript</button>
+        <button class="tab" data-tab="py">Python</button>
+      </div>
+      <pre class="code-block" data-panel="curl"><code>curl https://nexiom.dev/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $NEXIOM_KEY" \
   -d '{
@@ -116,8 +148,7 @@
       { "role": "user", "content": "Explain Nexiom in one line." }
     ]
   }'</code></pre>
-
-    <pre class="code-block hidden" data-panel="js"><code>const res = await fetch("https://nexiom.dev/api/v1/chat/completions", {
+      <pre class="code-block hidden" data-panel="js"><code>const res = await fetch("https://nexiom.dev/api/v1/chat/completions", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -127,38 +158,111 @@
     messages: [{ role: "user", content: "Explain Nexiom in one line." }]
   })
 });
-
 const data = await res.json();
 console.log(data.choices[0].message.content);</code></pre>
-
-    <pre class="code-block hidden" data-panel="py"><code>import os, requests
-
+      <pre class="code-block hidden" data-panel="py"><code>import os, requests
 res = requests.post(
     "https://nexiom.dev/api/v1/chat/completions",
     headers={"Authorization": f"Bearer {os.environ['NEXIOM_KEY']}"},
     json={"messages": [{"role": "user", "content": "Explain Nexiom in one line."}]},
 )
-
 print(res.json()["choices"][0]["message"]["content"])</code></pre>
-  </section>
-
-  <section class="access" id="access">
-    <div class="access-card">
-      <p class="eyebrow eyebrow-center">Access</p>
-      <h2>Keys are handed out one by one, for now</h2>
-      <p>Nexiom is early and small on purpose. Reach out and you'll get a key back personally, usually the same day.</p>
-      <a class="btn btn-primary" href="mailto:nexiom-api@proton.me">nexiom-api@proton.me</a>
     </div>
   </section>
+</script>
 
-</main>
+<script type="text/template" id="tmpl-login">
+  <section class="page-section">
+    <div class="auth-card">
+      <p class="eyebrow eyebrow-center">Welcome back</p>
+      <h2>Log in to your account</h2>
+      <form id="loginForm" class="auth-form">
+        <label class="auth-label">
+          Email
+          <input type="email" class="auth-input" id="loginEmail" required placeholder="you@example.com">
+        </label>
+        <label class="auth-label">
+          Password
+          <input type="password" class="auth-input" id="loginPassword" required placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+        </label>
+        <p class="auth-error" id="loginError"></p>
+        <button type="submit" class="btn btn-primary auth-btn">Log in</button>
+      </form>
+      <p class="auth-alt">Don't have an account? <a href="#/signup" data-nav>Sign up</a></p>
+    </div>
+  </section>
+</script>
 
-<footer class="footer">
-  <img src="logo.png" alt="Nexiom" class="footer-mark">
-  <span>Nexiom</span>
-  <span class="footer-dot">·</span>
-  <span>a small, resilient AI endpoint</span>
-</footer>
+<script type="text/template" id="tmpl-signup">
+  <section class="page-section">
+    <div class="auth-card">
+      <p class="eyebrow eyebrow-center">Get started</p>
+      <h2>Create your account</h2>
+      <form id="signupForm" class="auth-form">
+        <label class="auth-label">
+          Email
+          <input type="email" class="auth-input" id="signupEmail" required placeholder="you@example.com">
+        </label>
+        <label class="auth-label">
+          Password
+          <input type="password" class="auth-input" id="signupPassword" required minlength="6" placeholder="At least 6 characters">
+        </label>
+        <p class="auth-error" id="signupError"></p>
+        <button type="submit" class="btn btn-primary auth-btn">Create account</button>
+      </form>
+      <p class="auth-alt">Already have an account? <a href="#/login" data-nav>Log in</a></p>
+    </div>
+  </section>
+</script>
+
+<script type="text/template" id="tmpl-dashboard">
+  <section class="page-section">
+    <div class="page-card">
+      <p class="eyebrow eyebrow-center">Dashboard</p>
+      <h2>Your API Key</h2>
+      <div id="dashboardContent">
+        <div class="key-section">
+          <p class="text-muted">Generate an API key to use Nexiom programmatically. You can only have one active key at a time.</p>
+          <div class="key-display" id="keyDisplay">
+            <span class="text-muted">No API key yet.</span>
+          </div>
+          <div class="key-actions">
+            <button class="btn btn-primary" id="genKeyBtn">Generate API Key</button>
+            <button class="btn btn-ghost hidden" id="revokeKeyBtn">Revoke Key</button>
+            <button class="btn btn-ghost hidden" id="copyKeyBtn">Copy Key</button>
+          </div>
+          <p class="auth-success hidden" id="keyMessage"></p>
+        </div>
+        <hr class="section-divider">
+        <div class="playground-section">
+          <h3>Playground</h3>
+          <p class="text-muted">Test the models directly in your browser.</p>
+          <a href="#/playground" class="btn btn-primary" data-nav>Open Playground</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</script>
+
+<script type="text/template" id="tmpl-playground">
+  <section class="page-section">
+    <div class="page-card playground-card">
+      <p class="eyebrow eyebrow-center">Playground</p>
+      <h2>Test the models</h2>
+      <div id="playgroundContent">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-msg chat-msg-system">
+            <div class="chat-msg-content">Welcome to the Nexiom Playground! Send a message to test the models.</div>
+          </div>
+        </div>
+        <form id="chatForm" class="chat-input-wrap">
+          <textarea class="chat-input" id="chatInput" rows="2" placeholder="Type your message..." required></textarea>
+          <button type="submit" class="btn btn-primary chat-send" id="chatSend">Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</script>
 
 <script src="script.js"></script>
 </body>

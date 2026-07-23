@@ -1,9 +1,16 @@
-// Nexiom gateway — tries each configured inference path in order and
-// falls back to the next one on a rate limit, server error, or timeout.
-// Which real services sit behind PATH_A..PATH_E lives ONLY in Vercel's
-// environment variables — nothing about them is written in this repo.
+const { Redis } = require('@upstash/redis');
 
 const PATH_IDS = ["A", "B", "C", "D", "E"];
+const REQUEST_TIMEOUT_MS = 20000;
+
+let _kv = null;
+function getKv() {
+  if (_kv) return _kv;
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (url && token) _kv = new Redis({ url, token });
+  return _kv;
+}
 
 function loadPaths() {
   return PATH_IDS.map((id) => ({
@@ -14,9 +21,7 @@ function loadPaths() {
   })).filter((p) => p.url && p.key);
 }
 
-const REQUEST_TIMEOUT_MS = 20000;
-
-function isAuthorized(req) {
+async function isAuthorized(req) {
   const header = req.headers["authorization"] || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!token) return false;
@@ -28,9 +33,16 @@ function isAuthorized(req) {
   if (process.env.NEXIOM_KEYS) {
     try {
       const keys = JSON.parse(process.env.NEXIOM_KEYS);
-      return keys.some((k) => (typeof k === "string" ? k : k.key) === token);
-    } catch (err) {
-      return false;
+      if (keys.some((k) => (typeof k === "string" ? k : k.key) === token)) return true;
+    } catch (err) {}
+  }
+
+  const kv = getKv();
+  if (kv) {
+    const data = await kv.get(`apikey:${token}`);
+    if (data && data.user_id) {
+      await kv.set(`apikey:${token}`, { ...data, last_used_at: new Date().toISOString() });
+      return true;
     }
   }
 
@@ -72,7 +84,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  if (!isAuthorized(req)) {
+  if (!(await isAuthorized(req))) {
     res.status(401).json({ error: { message: "Missing or invalid API key." } });
     return;
   }

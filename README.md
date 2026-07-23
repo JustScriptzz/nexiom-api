@@ -7,7 +7,8 @@
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
-  <a href="#how-it-works">How it works</a>
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#setup">Setup</a>
 </p>
 
 ---
@@ -24,6 +25,8 @@ quietly moves on to the next — your code never sees the difference.
   no retries needed on your end.
 - **No lock-in** — swap or add inference paths behind the scenes without
   ever changing a line of your integration.
+- **Self-serve API keys** — sign up, generate a key, and start using it.
+- **Playground** — test the models directly in your browser.
 
 ## Quickstart
 
@@ -44,12 +47,43 @@ JavaScript and Python examples too.
 3. **You get an answer, not an error** — if a path is throttled or down,
    Nexiom re-routes before it ever reaches your code.
 
+## Setup
+
+### Prerequisites
+
+- Node.js >= 18
+- A Vercel KV store provisioned in your project (Vercel Dashboard → Storage → Create KV)
+
+### Environment variables (Vercel)
+
+Configure these in your Vercel project dashboard:
+
+| Variable | Description |
+|---|---|
+| `KV_REST_API_URL` | Set automatically by Vercel KV integration |
+| `KV_REST_API_TOKEN` | Set automatically by Vercel KV integration |
+| `PATH_A_URL` .. `PATH_E_URL` | Upstream inference endpoint URLs |
+| `PATH_A_KEY` .. `PATH_E_KEY` | Upstream API keys |
+| `PATH_A_MODEL` .. `PATH_E_MODEL` | Default model names |
+| `NEXIOM_API_KEY` | (optional) Legacy single shared key |
+| `NEXIOM_KEYS` | (optional) Legacy JSON array of keys |
+
+No database setup is needed — Vercel KV handles everything.
+
 ## Project structure
 
 ```
 nexiom-api/
-├── index.html, style.css, script.js, logo.png   → the public site
-└── api/v1/chat/completions.js                   → the gateway
+├── index.html, style.css, script.js, logo.png   → public site
+├── api/
+│   ├── lib/db.js                               → KV helpers
+│   └── v1/
+│       ├── auth/signup.js                       → POST signup
+│       ├── auth/login.js                        → POST login
+│       ├── auth/me.js                           → GET current user
+│       ├── chat/completions.js                  → POST chat (API key auth)
+│       ├── keys/index.js                        → GET/POST/DELETE keys
+│       ├── models/index.js                      → GET available models
+│       └── playground/chat.js                   → POST chat (session auth)
+└── package.json
 ```
-
-
