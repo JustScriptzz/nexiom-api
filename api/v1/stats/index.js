@@ -11,7 +11,11 @@ module.exports = async (req, res) => {
     url: process.env[`PATH_${id}_URL`],
     key: process.env[`PATH_${id}_KEY`],
     model: process.env[`PATH_${id}_MODEL`],
-  })).filter((p) => p.url && p.key);
+  })).filter((p) => {
+    if (!p.url || !p.key) return false;
+    try { const h = new URL(p.url).hostname; if (h.includes('groq') || h.includes('ofox') || h.includes('cerebras') || h.includes('ai.furry.vg')) return false; } catch {}
+    return true;
+  });
 
   const providerStatus = await Promise.all(paths.map(async (p) => {
     let status = 'unknown';
