@@ -26,7 +26,7 @@ function loadPaths(reqModel) {
     model: process.env[`PATH_${id}_MODEL`],
   })).filter((p) => {
     if (!p.url || !p.key) return false;
-    try { if (new URL(p.url).hostname.includes('groq')) return false; } catch {}
+    try { const h = new URL(p.url).hostname; if (h.includes('groq') || h.includes('ofox') || h.includes('cerebras')) return false; } catch {}
     const isZen = p.label === 'path-c';
     if (isZen && reqModel && reqModel !== 'nexiom-default' && !OPencodeZenFree.includes(reqModel)) return false;
     return true;

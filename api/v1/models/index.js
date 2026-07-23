@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
 
     let provider = 'unknown';
     try { provider = new URL(url).hostname; } catch {}
-    if (provider.includes('groq')) continue;
+    if (provider.includes('groq') || provider.includes('ofox') || provider.includes('cerebras')) continue;
 
     const modelsUrl = deriveModelsUrl(url);
 
