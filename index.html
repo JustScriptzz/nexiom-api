@@ -27,7 +27,7 @@
       <a href="#/docs" data-nav>Docs</a>
       <a href="#/dashboard" data-nav class="nav-authed hidden" id="navDash">Dashboard</a>
       <a href="#/keys" data-nav class="nav-authed hidden" id="navKeys">Keys</a>
-      <a href="#/playground" data-nav class="nav-authed hidden" id="navPlay">Playground</a>
+      <a href="#/chat" data-nav class="nav-authed hidden" id="navChat">Chat</a>
       <a href="#/login" data-nav class="nav-auth" id="navAuth">Log in</a>
     </nav>
   </div>
@@ -244,41 +244,37 @@ print(res.json()["choices"][0]["message"]["content"])</code></pre>
   </section>
 </script>
 
-<script type="text/template" id="tmpl-playground">
-  <section class="page-section">
-    <div class="page-card playground-card">
-      <p class="eyebrow eyebrow-center">Playground</p>
-      <h2>Test models</h2>
-      <div id="playgroundContent">
-        <div class="playground-controls">
-          <div class="pg-row">
-            <label class="pg-label">
-              Model
-              <select class="pg-select" id="pgModel"><option value="">Loading...</option></select>
-            </label>
-            <label class="pg-label pg-label-sm">
-              Temperature
-              <input type="range" class="pg-range" id="pgTemp" min="0" max="2" step="0.1" value="0.7">
-              <span class="pg-range-val" id="pgTempVal">0.7</span>
-            </label>
-            <label class="pg-label pg-label-sm">
-              Max Tokens
-              <input type="number" class="pg-input" id="pgMaxTokens" value="1024" min="1" max="65536">
-            </label>
-          </div>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-          <div class="chat-msg chat-msg-system">
-            <div class="chat-msg-content">Welcome to the Nexiom Playground! Configure the parameters above and send a message.</div>
-          </div>
-        </div>
-        <form id="chatForm" class="chat-input-wrap">
-          <textarea class="chat-input" id="chatInput" rows="2" placeholder="Type your message..." required></textarea>
-          <button type="submit" class="btn btn-primary chat-send" id="chatSend">Send</button>
-        </form>
+<script type="text/template" id="tmpl-chat">
+  <div class="chat-page">
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg chat-msg-assistant">
+        <div class="chat-msg-content">Welcome to Nexiom Chat! Send a message to get started.</div>
       </div>
     </div>
-  </section>
+    <div class="chat-bottom">
+      <div class="chat-toolbar" id="chatToolbar">
+        <label class="ct-label">
+          Model
+          <select class="ct-select" id="chatModel"></select>
+        </label>
+        <label class="ct-label ct-label-sm">
+          Temp
+          <input type="range" class="ct-range" id="chatTemp" min="0" max="2" step="0.1" value="0.7">
+          <span class="ct-range-val" id="chatTempVal">0.7</span>
+        </label>
+        <label class="ct-label ct-label-sm">
+          Max
+          <input type="number" class="ct-input" id="chatMaxTokens" value="1024" min="1" max="65536">
+        </label>
+        <button class="ct-toggle" id="chatToolbarToggle" title="Toggle settings">&#x2699;</button>
+      </div>
+      <form class="chat-form" id="chatForm">
+        <textarea class="chat-form-input" id="chatInput" rows="1" placeholder="Message Nexiom..." required></textarea>
+        <button type="submit" class="chat-form-btn" id="chatSend">Send</button>
+      </form>
+      <p class="chat-footnote">Models may return inaccurate information. Responses come from third-party providers.</p>
+    </div>
+  </div>
 </script>
 
 <script src="script.js"></script>

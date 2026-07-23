@@ -77,9 +77,10 @@ async function renderRoute() {
       app.innerHTML = html('tmpl-dashboard'); renderDashboard(); break;
     case '/logout':
       localStorage.removeItem('nx_token'); currentUser = null; navigate('/'); break;
+    case '/chat':
     case '/playground':
       if (!currentUser) { navigate('/login'); return; }
-      app.innerHTML = html('tmpl-playground'); renderPlayground(); break;
+      app.innerHTML = html('tmpl-chat'); renderChat(); break;
     default:
       app.innerHTML = `<section class="page-section"><div class="page-card"><h2>404</h2><p class="text-muted">Page not found.</p><a href="#/" data-nav class="btn btn-primary">Go home</a></div></section>`;
   }
@@ -204,8 +205,8 @@ async function renderDashboard() {
         <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Manage Keys</h3>
         <p class="text-muted" style="margin:0;font-size:0.82rem">Generate, edit, enable or delete your API keys</p>
       </a>
-      <a href="#/playground" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
-        <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Playground</h3>
+      <a href="#/chat" data-nav class="page-card" style="display:block;padding:20px;text-align:center;cursor:pointer;text-decoration:none;margin:0">
+        <h3 style="margin:0 0 4px;font-family:var(--font-display);font-size:1rem">Chat</h3>
         <p class="text-muted" style="margin:0;font-size:0.82rem">Test models interactively with full parameter control</p>
       </a>
     </div>
@@ -297,34 +298,38 @@ function esc(s) {
   return d.innerHTML;
 }
 
-async function renderPlayground() {
+async function renderChat() {
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
   const messages = document.getElementById('chatMessages');
   const sendBtn = document.getElementById('chatSend');
-  const modelSel = document.getElementById('pgModel');
-  const tempRange = document.getElementById('pgTemp');
-  const tempVal = document.getElementById('pgTempVal');
-  const maxTok = document.getElementById('pgMaxTokens');
+  const modelSel = document.getElementById('chatModel');
+  const tempRange = document.getElementById('chatTemp');
+  const tempVal = document.getElementById('chatTempVal');
+  const maxTok = document.getElementById('chatMaxTokens');
+  const toggle = document.getElementById('chatToolbarToggle');
+  const toolbar = document.getElementById('chatToolbar');
+
+  toggle.addEventListener('click', () => toolbar.classList.toggle('ct-hidden'));
 
   tempRange.addEventListener('input', () => { tempVal.textContent = tempRange.value; });
 
   const modelsData = await api('/api/v1/models');
   if (modelsData.models && modelsData.models.length > 0) {
     const seen = new Set();
-    modelSel.innerHTML = '<option value="">nexiom-default</option>' +
+    modelSel.innerHTML = '<option value="">Auto</option>' +
       modelsData.models
         .filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; })
         .map((m) => `<option value="${m.id}">${m.id}</option>`)
         .join('');
   } else {
-    modelSel.innerHTML = '<option value="">nexiom-default</option>';
+    modelSel.innerHTML = '<option value="">Auto</option>';
   }
 
   function addMsg(role, content) {
     const div = document.createElement('div');
     div.className = `chat-msg chat-msg-${role}`;
-    div.innerHTML = `<div class="chat-msg-label">${role === 'user' ? 'You' : 'Nexiom'}</div><div class="chat-msg-content">${esc(content)}</div>`;
+    div.innerHTML = `<div class="chat-msg-content">${esc(content)}</div>`;
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -335,11 +340,15 @@ async function renderPlayground() {
     if (!text) return;
     addMsg('user', text);
     input.value = '';
+    input.style.height = 'auto';
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending...';
+    sendBtn.textContent = '...';
 
-    addMsg('system', 'Thinking...');
-    const msgIdx = messages.lastElementChild;
+    const thinkingDiv = document.createElement('div');
+    thinkingDiv.className = 'chat-msg chat-msg-assistant';
+    thinkingDiv.innerHTML = '<div class="chat-msg-content thinking-dots"><span></span><span></span><span></span></div>';
+    messages.appendChild(thinkingDiv);
+    messages.scrollTop = messages.scrollHeight;
 
     const payload = {
       messages: [{ role: 'user', content: text }],
@@ -351,12 +360,20 @@ async function renderPlayground() {
     const data = await api('/api/v1/playground/chat', { method: 'POST', body: JSON.stringify(payload) });
 
     if (data.error) {
-      msgIdx.querySelector('.chat-msg-content').textContent = data.error?.message || data.error || 'Request failed.';
+      thinkingDiv.querySelector('.chat-msg-content').textContent = data.error?.message || data.error || 'Request failed.';
     } else {
-      msgIdx.querySelector('.chat-msg-content').textContent = data.choices?.[0]?.message?.content || JSON.stringify(data);
+      thinkingDiv.querySelector('.chat-msg-content').textContent = data.choices?.[0]?.message?.content || JSON.stringify(data);
     }
     sendBtn.disabled = false;
     sendBtn.textContent = 'Send';
+  });
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.dispatchEvent(new Event('submit')); }
   });
 }
 
