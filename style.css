@@ -560,15 +560,16 @@ a { color: inherit; }
 .chat-page {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
+  height: calc(100dvh - 60px);
   max-width: 800px;
   margin: 0 auto;
   padding: 0 20px;
+  position: relative;
 }
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 0;
+  padding: 20px 0 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -646,6 +647,7 @@ a { color: inherit; }
   margin-bottom: 10px;
   transition: all 0.2s ease;
 }
+.ct-hidden { display: none; }
 .chat-toolbar.ct-hidden {
   opacity: 0;
   max-height: 0;
