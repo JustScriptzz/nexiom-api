@@ -129,37 +129,44 @@ async function renderModels() {
   pingBtn.addEventListener('click', async () => {
     pingBtn.disabled = true;
     pingBtn.textContent = 'Pinging...';
-    pingStatus.textContent = 'Testing provider paths...';
-    pingResults.innerHTML = '';
+    pingStatus.textContent = 'Testing all models...';
 
-    const stats = await api('/api/v1/stats').catch(() => null);
-    if (!stats || !stats.providers) {
-      pingStatus.textContent = 'Failed to ping paths.';
+    const modelsPayload = data.models.map(m => ({ id: m.id, path: m.path }));
+    const resp = await api('/api/v1/stats/ping-models', { method: 'POST', body: JSON.stringify({ models: modelsPayload }) }).catch(() => null);
+
+    if (!resp || !resp.results) {
+      pingStatus.textContent = 'Ping failed.';
       pingBtn.disabled = false;
-      pingBtn.textContent = 'Ping All Paths';
+      pingBtn.textContent = 'Ping All Models';
       return;
     }
 
-    const online = stats.providers.filter(p => p.status === 'online').length;
-    pingStatus.textContent = `${online}/${stats.providers.length} paths online`;
+    const resultMap = {};
+    for (const r of resp.results) resultMap[r.id] = r;
 
-    pingResults.innerHTML = '<div class="dash-providers" style="margin-top:8px">' +
-      stats.providers.map(p => `
-        <div class="dash-provider ${p.status === 'online' ? 'dash-provider-ok' : 'dash-provider-down'}" style="margin:0">
-          <div class="dash-provider-left">
-            <span class="dash-dot ${p.status === 'online' ? 'dash-dot-ok' : 'dash-dot-err'}"></span>
-            <span class="dash-provider-name">${p.path}</span>
-          </div>
-          <div class="dash-provider-right">
-            ${p.latency ? `<span class="dash-latency">${p.latency}ms</span>` : ''}
-            <span class="dash-status ${p.status === 'online' ? 'dash-status-ok' : 'dash-status-err'}">${p.status}</span>
-          </div>
-          ${p.default_model ? `<div class="dash-provider-model">default: ${esc(p.default_model)}</div>` : ''}
+    const ok = resp.results.filter(r => r.ok).length;
+    pingStatus.textContent = `${ok}/${resp.results.length} models responded`;
+
+    list.innerHTML = `<div class="models-grid-flat">${data.models.map((m) => {
+      const r = resultMap[m.id];
+      let statusClass = '';
+      let errorMsg = '';
+      if (r) {
+        if (r.ok) statusClass = ' model-ping-ok';
+        else { statusClass = ' model-ping-err'; errorMsg = esc(r.error || ''); }
+      }
+      return `
+        <div class="model-card${m.default ? ' model-default' : ''}${statusClass}">
+          <span class="model-name">${esc(m.id)}</span>
+          ${m.default ? '<span class="model-badge model-badge-default">default</span>' : ''}
+          ${r && r.ok && r.latency ? `<span class="model-ping-latency">${r.latency}ms</span>` : ''}
+          ${errorMsg ? `<span class="model-ping-error" title="${errorMsg}">${errorMsg}</span>` : ''}
         </div>
-      `).join('') + '</div>';
+      `;
+    }).join('')}</div>`;
 
     pingBtn.disabled = false;
-    pingBtn.textContent = 'Ping All Paths';
+    pingBtn.textContent = 'Ping All Models';
   });
 }
 

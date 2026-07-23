@@ -464,6 +464,28 @@ a { color: inherit; }
   text-align: left;
   word-break: break-all;
 }
+.model-ping-ok .model-name { color: #2ecc71; }
+.model-ping-err .model-name { color: #e74c3c; }
+.model-ping-latency {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.model-ping-error {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #e74c3c;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(231,76,60,0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
 .model-badge {
   font-family: var(--font-mono);
   font-size: 0.7rem;
