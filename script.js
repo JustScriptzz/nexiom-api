@@ -107,9 +107,7 @@ async function renderModels() {
     list.innerHTML = '<p class="text-muted">No models are currently configured.</p>';
     return;
   }
-  const seen = new Set();
-  const models = data.models.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
-  list.innerHTML = `<div class="models-grid-flat">${models.map((m) => `
+  list.innerHTML = `<div class="models-grid-flat">${data.models.map((m) => `
     <div class="model-card${m.default ? ' model-default' : ''}">
       <span class="model-name">${m.id}</span>
       ${m.default ? '<span class="model-badge model-badge-default">default</span>' : ''}
