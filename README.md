@@ -52,17 +52,6 @@ nexiom-api/
 └── api/v1/chat/completions.js                   → the gateway
 ```
 
-## Calling it
-
-```bash
-curl https://<your-domain>/api/v1/chat/completions \
-  -H "Authorization: Bearer <NEXIOM_API_KEY>" \
-  -d '{"messages":[{"role":"user","content":"hey"}]}'
-```
-
-Pass `"model"` to force a specific underlying model, otherwise each path's
-default is used.
-
 ---
 
 <p align="center"><sub>hello@nexiom.dev is a placeholder in the site footer — swap it for a real inbox before sharing the link around.</sub></p>
