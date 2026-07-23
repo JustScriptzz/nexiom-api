@@ -1,6 +1,6 @@
 const { getKv, handleOptions, json } = require('../../lib/db');
 
-const PATH_IDS = ['A', 'B', 'C', 'D', 'E'];
+const PATH_IDS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 const REQUEST_TIMEOUT_MS = 30000;
 
 function loadPaths() {

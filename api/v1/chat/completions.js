@@ -1,6 +1,6 @@
 const { Redis } = require('@upstash/redis');
 
-const PATH_IDS = ["A", "B", "C", "D", "E"];
+const PATH_IDS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const REQUEST_TIMEOUT_MS = 20000;
 
 let _kv = null;

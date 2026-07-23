@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') { json(res, 405, { error: 'Use GET.' }); return; }
 
   const models = [];
-  for (const id of ['A', 'B', 'C', 'D', 'E']) {
+  for (const id of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']) {
     const model = process.env[`PATH_${id}_MODEL`];
     const url = process.env[`PATH_${id}_URL`];
     const key = process.env[`PATH_${id}_KEY`];
