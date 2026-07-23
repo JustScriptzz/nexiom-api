@@ -131,21 +131,27 @@ module.exports = async (req, res) => {
   const attempts = [];
 
   for (const [i, path] of candidates.entries()) {
-    try {
-      const result = await callPath(path, body);
+    const maxRetries = i === candidates.length - 1 ? 2 : 0;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+        const result = await callPath(path, body);
 
-      if (!result.ok && result.status >= 500) {
-        attempts.push({ path: path.label, status: result.status });
-        if (i < candidates.length - 1) continue;
-      } else if (!result.ok) {
-        attempts.push({ path: path.label, status: result.status });
-        continue;
+        if (!result.ok && result.status >= 500) {
+          attempts.push({ path: path.label, status: result.status, attempt: attempt + 1 });
+          if (attempt < maxRetries) continue;
+          break;
+        } else if (!result.ok) {
+          attempts.push({ path: path.label, status: result.status });
+          break;
+        }
+
+        res.status(result.ok ? 200 : result.status).json(result.json);
+        return;
+      } catch (err) {
+        attempts.push({ path: path.label, error: err && err.name === "AbortError" ? "timeout" : "network error", attempt: attempt + 1 });
+        if (attempt < maxRetries) continue;
       }
-
-      res.status(result.ok ? 200 : result.status).json(result.json);
-      return;
-    } catch (err) {
-      attempts.push({ path: path.label, error: err && err.name === "AbortError" ? "timeout" : "network error" });
     }
   }
 

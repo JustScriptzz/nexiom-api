@@ -152,19 +152,25 @@ module.exports = async (req, res) => {
   const attempts = [];
 
   for (const [i, path] of candidates.entries()) {
-    try {
-      let result;
-      if (isStream) {
-        result = await streamPath(path, body, res);
-        if (result.ok) return;
-      } else {
-        result = await callPath(path, body);
+    const maxRetries = !isStream && i === candidates.length - 1 ? 2 : 0;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
+        if (isStream) {
+          const result = await streamPath(path, body, res);
+          if (result.ok) return;
+          attempts.push({ path: path.label, status: result.status, error: result.error?.error?.message || result.error?.message || 'stream failed', attempt: attempt + 1 });
+          if (attempt < maxRetries) continue;
+          break;
+        }
+        const result = await callPath(path, body);
         if (!result.ok && result.status >= 500) {
-          attempts.push({ path: path.label, status: result.status });
-          if (i < candidates.length - 1) continue;
+          attempts.push({ path: path.label, status: result.status, attempt: attempt + 1 });
+          if (attempt < maxRetries) continue;
+          break;
         } else if (!result.ok) {
           attempts.push({ path: path.label, status: result.status });
-          continue;
+          break;
         }
         const userKey = await kv.get(`userkey:${session.user_id}`);
         if (userKey) {
@@ -174,17 +180,14 @@ module.exports = async (req, res) => {
         }
         json(res, 200, result.json);
         return;
+      } catch (err) {
+        if (isStream) {
+          try { res.end(); } catch {}
+          return;
+        }
+        attempts.push({ path: path.label, error: err && err.name === 'AbortError' ? 'timeout' : 'network error', attempt: attempt + 1 });
+        if (attempt < maxRetries) continue;
       }
-
-      if (isStream) {
-        attempts.push({ path: path.label, status: result.status, error: result.error?.error?.message || result.error?.message || 'stream failed' });
-      }
-    } catch (err) {
-      if (isStream) {
-        try { res.end(); } catch {}
-        return;
-      }
-      attempts.push({ path: path.label, error: err && err.name === 'AbortError' ? 'timeout' : 'network error' });
     }
   }
 
