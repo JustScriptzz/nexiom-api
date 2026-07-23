@@ -218,26 +218,20 @@ print(res.json()["choices"][0]["message"]["content"])</code></pre>
 
 <script type="text/template" id="tmpl-dashboard">
   <section class="page-section">
-    <div class="page-card">
+    <div class="page-card dashboard-card">
       <p class="eyebrow eyebrow-center">Dashboard</p>
-      <h2>Your API Key</h2>
+      <h2>Manage API Keys</h2>
       <div id="dashboardContent">
         <div class="key-section">
-          <p class="text-muted">Generate an API key to use Nexiom programmatically. You can only have one active key at a time.</p>
-          <div class="key-display" id="keyDisplay">
-            <span class="text-muted">No API key yet.</span>
-          </div>
-          <div class="key-actions">
-            <button class="btn btn-primary" id="genKeyBtn">Generate API Key</button>
-            <button class="btn btn-ghost hidden" id="revokeKeyBtn">Revoke Key</button>
-            <button class="btn btn-ghost hidden" id="copyKeyBtn">Copy Key</button>
-          </div>
-          <p class="auth-success hidden" id="keyMessage"></p>
+          <p class="text-muted">Create and manage API keys. Each key can be labeled, enabled/disabled, and restricted to specific models.</p>
+          <div class="key-list" id="keyList"></div>
+          <button class="btn btn-primary" id="genKeyBtn" style="margin-top:16px">+ Generate New Key</button>
+          <p class="auth-success hidden" id="keyMessage" style="margin-top:12px"></p>
         </div>
         <hr class="section-divider">
         <div class="playground-section">
           <h3>Playground</h3>
-          <p class="text-muted">Test the models directly in your browser.</p>
+          <p class="text-muted">Test models interactively with full parameter control.</p>
           <a href="#/playground" class="btn btn-primary" data-nav>Open Playground</a>
         </div>
       </div>
@@ -249,11 +243,28 @@ print(res.json()["choices"][0]["message"]["content"])</code></pre>
   <section class="page-section">
     <div class="page-card playground-card">
       <p class="eyebrow eyebrow-center">Playground</p>
-      <h2>Test the models</h2>
+      <h2>Test models</h2>
       <div id="playgroundContent">
+        <div class="playground-controls">
+          <div class="pg-row">
+            <label class="pg-label">
+              Model
+              <select class="pg-select" id="pgModel"><option value="">Loading...</option></select>
+            </label>
+            <label class="pg-label pg-label-sm">
+              Temperature
+              <input type="range" class="pg-range" id="pgTemp" min="0" max="2" step="0.1" value="0.7">
+              <span class="pg-range-val" id="pgTempVal">0.7</span>
+            </label>
+            <label class="pg-label pg-label-sm">
+              Max Tokens
+              <input type="number" class="pg-input" id="pgMaxTokens" value="1024" min="1" max="65536">
+            </label>
+          </div>
+        </div>
         <div class="chat-messages" id="chatMessages">
           <div class="chat-msg chat-msg-system">
-            <div class="chat-msg-content">Welcome to the Nexiom Playground! Send a message to test the models.</div>
+            <div class="chat-msg-content">Welcome to the Nexiom Playground! Configure the parameters above and send a message.</div>
           </div>
         </div>
         <form id="chatForm" class="chat-input-wrap">

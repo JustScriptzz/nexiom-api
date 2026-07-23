@@ -13,37 +13,77 @@ module.exports = async (req, res) => {
   const session = await kv.get(`session:${token}`);
   if (!session) { json(res, 401, { error: 'Invalid or expired session.' }); return; }
 
+  const userId = session.user_id;
+
+  async function getUserKeys() {
+    return (await kv.get(`userkeys:${userId}`)) || [];
+  }
+
+  async function saveUserKeys(keys) {
+    await kv.set(`userkeys:${userId}`, keys);
+  }
+
   if (req.method === 'GET') {
-    const userKey = await kv.get(`userkey:${session.user_id}`);
-    json(res, 200, { api_key: userKey || null });
+    const keys = await getUserKeys();
+    json(res, 200, { keys });
     return;
   }
 
   if (req.method === 'POST') {
-    const existing = await kv.get(`userkey:${session.user_id}`);
-    if (existing) {
-      json(res, 409, { error: 'You already have an API key. Revoke it first to generate a new one.', api_key: existing });
-      return;
-    }
-
+    const { label, models } = req.body || {};
     const newKey = generateApiKey();
     const now = new Date().toISOString();
-    const keyData = { key: newKey, created_at: now, last_used_at: null };
+    const entry = { key: newKey, label: label || 'Untitled Key', is_active: true, models: models || null, created_at: now, last_used_at: null };
 
-    await kv.set(`apikey:${newKey}`, { user_id: session.user_id, created_at: now, last_used_at: null });
-    await kv.set(`userkey:${session.user_id}`, keyData);
+    const keys = await getUserKeys();
+    keys.push(entry);
+    await saveUserKeys(keys);
+    await kv.set(`apikey:${newKey}`, { user_id: userId, label: entry.label, is_active: true, models: entry.models, created_at: now, last_used_at: null });
 
-    json(res, 201, { api_key: keyData, message: 'API key created.' });
+    json(res, 201, { key: entry, message: 'API key created.' });
+    return;
+  }
+
+  if (req.method === 'PUT') {
+    const { key, label, is_active, models } = req.body || {};
+    if (!key) { json(res, 400, { error: 'Key is required.' }); return; }
+
+    const existing = await kv.get(`apikey:${key}`);
+    if (!existing || existing.user_id !== userId) { json(res, 404, { error: 'Key not found.' }); return; }
+
+    const updates = {};
+    if (label !== undefined) updates.label = label;
+    if (is_active !== undefined) updates.is_active = is_active;
+    if (models !== undefined) updates.models = models;
+
+    const updatedEntry = { ...existing, ...updates };
+    await kv.set(`apikey:${key}`, updatedEntry);
+
+    const keys = await getUserKeys();
+    const idx = keys.findIndex((k) => k.key === key);
+    if (idx !== -1) {
+      keys[idx] = { ...keys[idx], ...updates };
+      await saveUserKeys(keys);
+    }
+
+    json(res, 200, { key: updatedEntry, message: 'Key updated.' });
     return;
   }
 
   if (req.method === 'DELETE') {
-    const existing = await kv.get(`userkey:${session.user_id}`);
-    if (existing) {
-      await kv.del(`apikey:${existing.key}`);
-      await kv.del(`userkey:${session.user_id}`);
-    }
-    json(res, 200, { message: 'API key revoked.' });
+    const { key } = req.body || {};
+    if (!key) { json(res, 400, { error: 'Key is required.' }); return; }
+
+    const existing = await kv.get(`apikey:${key}`);
+    if (!existing || existing.user_id !== userId) { json(res, 404, { error: 'Key not found.' }); return; }
+
+    await kv.del(`apikey:${key}`);
+
+    const keys = await getUserKeys();
+    const filtered = keys.filter((k) => k.key !== key);
+    await saveUserKeys(filtered);
+
+    json(res, 200, { message: 'Key deleted.' });
     return;
   }
 

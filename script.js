@@ -1,7 +1,6 @@
 const API_BASE = '';
 let currentUser = null;
 
-// ---------- Utils ----------
 const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
 const html = (id) => document.getElementById(id).innerHTML;
@@ -18,41 +17,23 @@ function showError(el, msg) { if (el) { el.textContent = msg; el.classList.remov
 function showSuccess(el, msg) { if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
 function hide(el) { if (el) el.classList.add('hidden'); }
 
-// ---------- Auth ----------
 async function checkSession() {
   const token = localStorage.getItem('nx_token');
   if (!token) { currentUser = null; return; }
   const data = await api('/api/v1/auth/me');
-  if (data.user) {
-    currentUser = data.user;
-    currentUser.api_key = data.api_key;
-  } else {
-    localStorage.removeItem('nx_token');
-    currentUser = null;
-  }
+  if (data.user) { currentUser = data.user; }
+  else { localStorage.removeItem('nx_token'); currentUser = null; }
 }
 
 function updateNav() {
   const el = document.getElementById('navAuth');
   if (!el) return;
-  if (currentUser) {
-    el.textContent = 'Dashboard';
-    el.href = '#/dashboard';
-  } else {
-    el.textContent = 'Log in';
-    el.href = '#/login';
-  }
+  if (currentUser) { el.textContent = 'Dashboard'; el.href = '#/dashboard'; }
+  else { el.textContent = 'Log in'; el.href = '#/login'; }
 }
 
-// ---------- Router ----------
-function getHash() {
-  const h = location.hash.slice(1) || '/';
-  return h.split('?')[0];
-}
-
-function navigate(href) {
-  location.hash = href;
-}
+function getHash() { return (location.hash.slice(1) || '/').split('?')[0]; }
+function navigate(href) { location.hash = href; }
 
 function initRouter() {
   window.addEventListener('hashchange', renderRoute);
@@ -73,51 +54,31 @@ async function renderRoute() {
   updateNav();
 
   switch (route) {
-    case '/':
-    case '':
-      app.innerHTML = html('tmpl-home');
-      renderHome();
-      break;
-    case '/models':
-      app.innerHTML = html('tmpl-models');
-      renderModels();
-      break;
-    case '/docs':
-      app.innerHTML = html('tmpl-docs');
-      renderDocs();
-      break;
+    case '/': case '': app.innerHTML = html('tmpl-home'); renderHome(); break;
+    case '/models': app.innerHTML = html('tmpl-models'); renderModels(); break;
+    case '/docs': app.innerHTML = html('tmpl-docs'); renderDocs(); break;
     case '/login':
       if (currentUser) { navigate('/dashboard'); return; }
-      app.innerHTML = html('tmpl-login');
-      renderLogin();
-      break;
+      app.innerHTML = html('tmpl-login'); renderLogin(); break;
     case '/signup':
       if (currentUser) { navigate('/dashboard'); return; }
-      app.innerHTML = html('tmpl-signup');
-      renderSignup();
-      break;
+      app.innerHTML = html('tmpl-signup'); renderSignup(); break;
     case '/dashboard':
       if (!currentUser) { navigate('/login'); return; }
-      app.innerHTML = html('tmpl-dashboard');
-      renderDashboard();
-      break;
+      app.innerHTML = html('tmpl-dashboard'); renderDashboard(); break;
     case '/playground':
       if (!currentUser) { navigate('/login'); return; }
-      app.innerHTML = html('tmpl-playground');
-      renderPlayground();
-      break;
+      app.innerHTML = html('tmpl-playground'); renderPlayground(); break;
     default:
       app.innerHTML = `<section class="page-section"><div class="page-card"><h2>404</h2><p class="text-muted">Page not found.</p><a href="#/" data-nav class="btn btn-primary">Go home</a></div></section>`;
   }
 }
 
-// ---------- Home ----------
 function renderHome() {
   const target = document.getElementById('typedResponse');
   if (!target) return;
   const text = 'still here. what do you need?';
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotion) { target.textContent = text; return; }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { target.textContent = text; return; }
   let i = 0;
   function step() {
     if (i <= text.length) { target.textContent = text.slice(0, i); i++; setTimeout(step, 28); }
@@ -125,7 +86,6 @@ function renderHome() {
   setTimeout(step, 900);
 }
 
-// ---------- Models ----------
 async function renderModels() {
   const list = document.getElementById('modelsList');
   const data = await api('/api/v1/models');
@@ -133,13 +93,11 @@ async function renderModels() {
     list.innerHTML = '<p class="text-muted">No models are currently configured.</p>';
     return;
   }
-
   const grouped = {};
   for (const m of data.models) {
     if (!grouped[m.provider]) grouped[m.provider] = [];
     grouped[m.provider].push(m);
   }
-
   list.innerHTML = Object.entries(grouped).map(([provider, models]) => `
     <div class="provider-group">
       <div class="provider-header">${provider}</div>
@@ -154,7 +112,6 @@ async function renderModels() {
   `).join('');
 }
 
-// ---------- Docs ----------
 function renderDocs() {
   const tabs = document.getElementById('codeTabs');
   if (!tabs) return;
@@ -169,7 +126,6 @@ function renderDocs() {
   });
 }
 
-// ---------- Login ----------
 function renderLogin() {
   const form = document.getElementById('loginForm');
   if (!form) return;
@@ -189,12 +145,10 @@ function renderLogin() {
     }
     localStorage.setItem('nx_token', data.session.access_token);
     currentUser = data.user;
-    currentUser.api_key = null;
     navigate('/dashboard');
   });
 }
 
-// ---------- Signup ----------
 function renderSignup() {
   const form = document.getElementById('signupForm');
   if (!form) return;
@@ -216,74 +170,119 @@ function renderSignup() {
   });
 }
 
-// ---------- Dashboard ----------
 function renderDashboard() {
-  const display = document.getElementById('keyDisplay');
+  const list = document.getElementById('keyList');
   const genBtn = document.getElementById('genKeyBtn');
-  const revokeBtn = document.getElementById('revokeKeyBtn');
-  const copyBtn = document.getElementById('copyKeyBtn');
   const msgEl = document.getElementById('keyMessage');
 
-  async function refreshKey() {
+  async function loadKeys() {
     const data = await api('/api/v1/keys');
-    if (data.api_key) {
-      display.innerHTML = `<code class="key-value">${data.api_key.key}</code><span class="text-muted key-date">Created ${new Date(data.api_key.created_at).toLocaleDateString()}</span>`;
-      hide(genBtn);
-      revokeBtn.classList.remove('hidden');
-      copyBtn.classList.remove('hidden');
-    } else {
-      display.innerHTML = '<span class="text-muted">No API key yet. Generate one below.</span>';
-      genBtn.classList.remove('hidden');
-      revokeBtn.classList.add('hidden');
-      copyBtn.classList.add('hidden');
+    const keys = data.keys || [];
+    if (keys.length === 0) {
+      list.innerHTML = '<p class="text-muted" style="padding:12px 0">No API keys yet. Generate one below.</p>';
+      return;
     }
-  }
+    list.innerHTML = keys.map((k, i) => `
+      <div class="key-row${k.is_active ? '' : ' key-row-disabled'}">
+        <div class="key-row-header">
+          <span class="key-row-label">${esc(k.label)}</span>
+          <span class="key-row-status ${k.is_active ? 'status-active' : 'status-inactive'}">${k.is_active ? 'Active' : 'Disabled'}</span>
+        </div>
+        <div class="key-row-meta">
+          <code class="key-row-value" id="keyVal_${i}">${k.key}</code>
+          <span class="text-muted key-row-date">Created ${new Date(k.created_at).toLocaleDateString()}</span>
+        </div>
+        <div class="key-row-actions">
+          <button class="btn-sm" data-action="copy" data-idx="${i}">Copy</button>
+          <button class="btn-sm" data-action="toggle" data-idx="${i}">${k.is_active ? 'Disable' : 'Enable'}</button>
+          <button class="btn-sm" data-action="edit" data-idx="${i}">Edit</button>
+          <button class="btn-sm btn-sm-danger" data-action="delete" data-idx="${i}">Delete</button>
+        </div>
+      </div>
+    `).join('');
 
-  refreshKey();
+    list.querySelectorAll('[data-action]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.dataset.idx);
+        const key = keys[idx].key;
+        hide(msgEl);
+
+        switch (btn.dataset.action) {
+          case 'copy': {
+            const el = document.getElementById(`keyVal_${idx}`);
+            if (el) { await navigator.clipboard.writeText(el.textContent); showSuccess(msgEl, 'Copied!'); }
+            break;
+          }
+          case 'toggle': {
+            const data = await api('/api/v1/keys', { method: 'PUT', body: JSON.stringify({ key, is_active: !keys[idx].is_active }) });
+            if (data.error) showError(msgEl, data.error); else { showSuccess(msgEl, data.message); await loadKeys(); }
+            break;
+          }
+          case 'delete': {
+            if (!confirm(`Delete key "${keys[idx].label}"?`)) return;
+            const data = await api('/api/v1/keys', { method: 'DELETE', body: JSON.stringify({ key }) });
+            if (data.error) showError(msgEl, data.error); else { showSuccess(msgEl, 'Key deleted.'); await loadKeys(); }
+            break;
+          }
+          case 'edit': {
+            const label = prompt('Label:', keys[idx].label);
+            if (label === null) return;
+            const modelsRaw = prompt('Allowed models (comma-separated, leave blank for all):', (keys[idx].models || []).join(', '));
+            const models = modelsRaw ? modelsRaw.split(',').map((s) => s.trim()).filter(Boolean) : null;
+            const data = await api('/api/v1/keys', { method: 'PUT', body: JSON.stringify({ key, label, models }) });
+            if (data.error) showError(msgEl, data.error); else { showSuccess(msgEl, 'Key updated.'); await loadKeys(); }
+            break;
+          }
+        }
+      });
+    });
+  }
 
   genBtn.addEventListener('click', async () => {
     hide(msgEl);
-    const data = await api('/api/v1/keys', { method: 'POST' });
-    if (data.error) {
-      showError(msgEl, data.error);
-      return;
-    }
-    showSuccess(msgEl, 'API key created!');
-    await refreshKey();
+    const label = prompt('Label for this key (optional):') || 'Untitled Key';
+    const data = await api('/api/v1/keys', { method: 'POST', body: JSON.stringify({ label }) });
+    if (data.error) showError(msgEl, data.error);
+    else { showSuccess(msgEl, 'API key created!'); await loadKeys(); }
   });
 
-  revokeBtn.addEventListener('click', async () => {
-    if (!confirm('Revoke your current API key? This cannot be undone.')) return;
-    hide(msgEl);
-    const data = await api('/api/v1/keys', { method: 'DELETE' });
-    if (data.error) { showError(msgEl, data.error); return; }
-    showSuccess(msgEl, 'API key revoked.');
-    await refreshKey();
-  });
-
-  copyBtn.addEventListener('click', async () => {
-    const code = display.querySelector('code');
-    if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code.textContent);
-      showSuccess(msgEl, 'Copied to clipboard!');
-    } catch {
-      showError(msgEl, 'Failed to copy.');
-    }
-  });
+  loadKeys();
 }
 
-// ---------- Playground ----------
-function renderPlayground() {
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function renderPlayground() {
   const form = document.getElementById('chatForm');
   const input = document.getElementById('chatInput');
   const messages = document.getElementById('chatMessages');
   const sendBtn = document.getElementById('chatSend');
+  const modelSel = document.getElementById('pgModel');
+  const tempRange = document.getElementById('pgTemp');
+  const tempVal = document.getElementById('pgTempVal');
+  const maxTok = document.getElementById('pgMaxTokens');
+
+  tempRange.addEventListener('input', () => { tempVal.textContent = tempRange.value; });
+
+  const modelsData = await api('/api/v1/models');
+  if (modelsData.models && modelsData.models.length > 0) {
+    const seen = new Set();
+    modelSel.innerHTML = '<option value="">nexiom-default</option>' +
+      modelsData.models
+        .filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; })
+        .map((m) => `<option value="${m.id}">${m.id}</option>`)
+        .join('');
+  } else {
+    modelSel.innerHTML = '<option value="">nexiom-default</option>';
+  }
 
   function addMsg(role, content) {
     const div = document.createElement('div');
     div.className = `chat-msg chat-msg-${role}`;
-    div.innerHTML = `<div class="chat-msg-label">${role === 'user' ? 'You' : 'Nexiom'}</div><div class="chat-msg-content">${content}</div>`;
+    div.innerHTML = `<div class="chat-msg-label">${role === 'user' ? 'You' : 'Nexiom'}</div><div class="chat-msg-content">${esc(content)}</div>`;
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
   }
@@ -300,24 +299,23 @@ function renderPlayground() {
     addMsg('system', 'Thinking...');
     const msgIdx = messages.lastElementChild;
 
-    const data = await api('/api/v1/playground/chat', {
-      method: 'POST',
-      body: JSON.stringify({ messages: [{ role: 'user', content: text }] }),
-    });
+    const payload = {
+      messages: [{ role: 'user', content: text }],
+      model: modelSel.value || undefined,
+      temperature: parseFloat(tempRange.value),
+      max_tokens: parseInt(maxTok.value) || undefined,
+    };
+
+    const data = await api('/api/v1/playground/chat', { method: 'POST', body: JSON.stringify(payload) });
 
     if (data.error) {
       msgIdx.querySelector('.chat-msg-content').textContent = data.error?.message || data.error || 'Request failed.';
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send';
-      return;
+    } else {
+      msgIdx.querySelector('.chat-msg-content').textContent = data.choices?.[0]?.message?.content || JSON.stringify(data);
     }
-
-    const reply = data.choices?.[0]?.message?.content || JSON.stringify(data);
-    msgIdx.querySelector('.chat-msg-content').textContent = reply;
     sendBtn.disabled = false;
     sendBtn.textContent = 'Send';
   });
 }
 
-// ---------- Init ----------
 initRouter();

@@ -21,6 +21,8 @@ function loadPaths() {
   })).filter((p) => p.url && p.key);
 }
 
+let _authorizedKeyMeta = null;
+
 async function isAuthorized(req) {
   const header = req.headers["authorization"] || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
@@ -41,6 +43,8 @@ async function isAuthorized(req) {
   if (kv) {
     const data = await kv.get(`apikey:${token}`);
     if (data && data.user_id) {
+      if (data.is_active === false) return false;
+      _authorizedKeyMeta = data;
       await kv.set(`apikey:${token}`, { ...data, last_used_at: new Date().toISOString() });
       return true;
     }
@@ -95,7 +99,18 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const candidates = loadPaths();
+  let candidates = loadPaths();
+
+  const reqModel = body.model;
+  if (_authorizedKeyMeta && Array.isArray(_authorizedKeyMeta.models) && _authorizedKeyMeta.models.length > 0) {
+    if (reqModel && !_authorizedKeyMeta.models.includes(reqModel)) {
+      res.status(403).json({ error: { message: `This API key is not allowed to use model "${reqModel}".` } });
+      return;
+    }
+    candidates = candidates.filter((p) => !p.model || _authorizedKeyMeta.models.includes(p.model));
+  }
+  _authorizedKeyMeta = null;
+
   if (candidates.length === 0) {
     res.status(503).json({ error: { message: "No inference paths are configured yet." } });
     return;

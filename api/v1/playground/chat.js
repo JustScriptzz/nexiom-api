@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
       const userKey = await kv.get(`userkey:${session.user_id}`);
       if (userKey) {
         const now = new Date().toISOString();
-        await kv.set(`apikey:${userKey.key}`, { user_id: session.user_id, created_at: userKey.created_at, last_used_at: now });
+        await kv.set(`apikey:${userKey.key}`, { ...userKey, last_used_at: now });
         await kv.set(`userkey:${session.user_id}`, { ...userKey, last_used_at: now });
       }
 
