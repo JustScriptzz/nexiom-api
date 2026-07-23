@@ -362,7 +362,10 @@ async function renderChat() {
     if (data.error) {
       thinkingDiv.querySelector('.chat-msg-content').textContent = data.error?.message || data.error || 'Request failed.';
     } else {
-      thinkingDiv.querySelector('.chat-msg-content').textContent = data.choices?.[0]?.message?.content || JSON.stringify(data);
+      const content = data.choices?.[0]?.message?.content || JSON.stringify(data);
+      const model = data.model || '';
+      const label = model ? `<div class="chat-msg-model">${esc(model)}</div>` : '';
+      thinkingDiv.innerHTML = label + `<div class="chat-msg-content">${esc(content)}</div>`;
     }
     sendBtn.disabled = false;
     sendBtn.textContent = 'Send';

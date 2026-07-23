@@ -598,6 +598,14 @@ a { color: inherit; }
   border: 1px solid var(--line);
   border-bottom-left-radius: 4px;
 }
+.chat-msg-model {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-align: right;
+  margin-bottom: 3px;
+  padding-right: 4px;
+}
 .chat-msg-assistant:first-child .chat-msg-content {
   color: var(--text-muted);
   font-size: 0.85rem;
