@@ -57,22 +57,20 @@ nexiom-api/
 
 1. On vercel.com → **Add New Project** → import this repo. Zero build
    config needed.
-2. In **Settings → Environment Variables**, add whichever of these you have
-   keys for — Nexiom only uses the paths it has a key for:
+2. In **Settings → Environment Variables**, configure up to 5 inference
+   paths — Nexiom tries them in order and only uses the ones that are set:
 
-   | Variable | Path |
+   | Variable | Meaning |
    |---|---|
-   | `GROQ_API_KEY` | Groq |
-   | `CEREBRAS_API_KEY` | Cerebras |
-   | `OFOX_API_KEY` | Ofox.ai |
-   | `ATLAS_API_KEY` (+ optional `ATLAS_BASE_URL`) | Atlas Cloud |
-   | `OPENCODE_ZEN_API_KEY` | OpenCode Zen |
+   | `PATH_A_URL`, `PATH_A_KEY` | first path's endpoint + key |
+   | `PATH_B_URL`, `PATH_B_KEY` | second path |
+   | `PATH_C_URL`, `PATH_C_KEY` | third path |
+   | `PATH_D_URL`, `PATH_D_KEY` | fourth path |
+   | `PATH_E_URL`, `PATH_E_KEY` | fifth path |
+   | `PATH_A_MODEL` … `PATH_E_MODEL` | optional, forces a model on that path |
 
    Also set `NEXIOM_API_KEY` — the key your own users will send you. Pick
    any long random string; it isn't tied to a provider.
-
-   Optional model overrides: `GROQ_MODEL`, `CEREBRAS_MODEL`, `OFOX_MODEL`,
-   `ATLAS_MODEL`, `OPENCODE_ZEN_MODEL`.
 
 3. Redeploy after saving env vars.
 

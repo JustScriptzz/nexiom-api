@@ -1,41 +1,18 @@
 // Nexiom gateway — tries each configured inference path in order and
 // falls back to the next one on a rate limit, server error, or timeout.
-// Real provider identity is intentionally kept out of anything sent
-// back to the caller (see PATH_LABEL below) — only env var names and
-// this file reveal which service is which.
+// Which real services sit behind PATH_A..PATH_E lives ONLY in Vercel's
+// environment variables — nothing about them is written in this repo.
 
-const PROVIDERS = [
-  {
-    label: "path-a",
-    key: process.env.GROQ_API_KEY,
-    url: "https://api.groq.com/openai/v1/chat/completions",
-    defaultModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-  },
-  {
-    label: "path-b",
-    key: process.env.CEREBRAS_API_KEY,
-    url: "https://api.cerebras.ai/v1/chat/completions",
-    defaultModel: process.env.CEREBRAS_MODEL || "llama3.3-70b",
-  },
-  {
-    label: "path-c",
-    key: process.env.OFOX_API_KEY,
-    url: "https://api.ofox.ai/v1/chat/completions",
-    defaultModel: process.env.OFOX_MODEL || "openai/gpt-5.5",
-  },
-  {
-    label: "path-d",
-    key: process.env.ATLAS_API_KEY,
-    url: process.env.ATLAS_BASE_URL || "https://api.atlascloud.ai/v1/chat/completions",
-    defaultModel: process.env.ATLAS_MODEL || "llama-3.3-70b",
-  },
-  {
-    label: "path-e",
-    key: process.env.OPENCODE_ZEN_API_KEY,
-    url: "https://opencode.ai/zen/v1/chat/completions",
-    defaultModel: process.env.OPENCODE_ZEN_MODEL || "big-pickle",
-  },
-];
+const PATH_IDS = ["A", "B", "C", "D", "E"];
+
+function loadPaths() {
+  return PATH_IDS.map((id) => ({
+    label: `path-${id.toLowerCase()}`,
+    url: process.env[`PATH_${id}_URL`],
+    key: process.env[`PATH_${id}_KEY`],
+    model: process.env[`PATH_${id}_MODEL`],
+  })).filter((p) => p.url && p.key);
+}
 
 const REQUEST_TIMEOUT_MS = 20000;
 
@@ -45,23 +22,27 @@ function isAuthorized(req) {
   return Boolean(process.env.NEXIOM_API_KEY) && token === process.env.NEXIOM_API_KEY;
 }
 
-async function callProvider(provider, body) {
+async function callPath(path, body) {
+  const payload = { ...body };
+  const requestedModel = body.model;
+  if (!requestedModel || requestedModel === "nexiom-default") {
+    if (path.model) {
+      payload.model = path.model;
+    } else {
+      delete payload.model;
+    }
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const upstream = await fetch(provider.url, {
+    const upstream = await fetch(path.url, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${provider.key}`,
+        authorization: `Bearer ${path.key}`,
       },
-      body: JSON.stringify({
-        ...body,
-        model:
-          body.model && body.model !== "nexiom-default"
-            ? body.model
-            : provider.defaultModel,
-      }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
     return { ok: upstream.ok, status: upstream.status, json: upstream.ok ? await upstream.json() : null };
@@ -87,7 +68,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const candidates = PROVIDERS.filter((p) => p.key);
+  const candidates = loadPaths();
   if (candidates.length === 0) {
     res.status(503).json({ error: { message: "No inference paths are configured yet." } });
     return;
@@ -95,24 +76,24 @@ module.exports = async (req, res) => {
 
   const attempts = [];
 
-  for (const provider of candidates) {
+  for (const path of candidates) {
     try {
-      const result = await callProvider(provider, body);
+      const result = await callPath(path, body);
 
       if (result.status === 429 || result.status >= 500) {
-        attempts.push({ path: provider.label, status: result.status });
+        attempts.push({ path: path.label, status: result.status });
         continue;
       }
 
       if (!result.ok) {
-        attempts.push({ path: provider.label, status: result.status });
+        attempts.push({ path: path.label, status: result.status });
         continue;
       }
 
       res.status(200).json(result.json);
       return;
     } catch (err) {
-      attempts.push({ path: provider.label, error: err && err.name === "AbortError" ? "timeout" : "network error" });
+      attempts.push({ path: path.label, error: err && err.name === "AbortError" ? "timeout" : "network error" });
     }
   }
 
