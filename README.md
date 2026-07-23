@@ -2,7 +2,7 @@
   <img src="logo.png" width="96" alt="Nexiom logo">
 </p>
 
-<h1 align="center">Nexiom</h1>
+<h1 align="center">Nexiom API</h1>
 <p align="center"><b>One AI endpoint. It answers every time.</b></p>
 
 <p align="center">
