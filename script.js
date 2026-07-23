@@ -344,10 +344,10 @@ async function renderChat() {
     sendBtn.disabled = true;
     sendBtn.textContent = '...';
 
-    const thinkingDiv = document.createElement('div');
-    thinkingDiv.className = 'chat-msg chat-msg-assistant';
-    thinkingDiv.innerHTML = '<div class="chat-msg-content thinking-dots"><span></span><span></span><span></span></div>';
-    messages.appendChild(thinkingDiv);
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg chat-msg-assistant';
+    msgDiv.innerHTML = '<div class="chat-msg-content thinking-dots"><span></span><span></span><span></span></div>';
+    messages.appendChild(msgDiv);
     messages.scrollTop = messages.scrollHeight;
 
     const payload = {
@@ -355,19 +355,66 @@ async function renderChat() {
       model: modelSel.value || undefined,
       temperature: parseFloat(tempRange.value),
       max_tokens: parseInt(maxTok.value) || undefined,
+      stream: true,
     };
 
-    const data = await api('/api/v1/playground/chat', { method: 'POST', body: JSON.stringify(payload) });
+    const token = localStorage.getItem('nx_token');
+    let fullContent = '';
+    let responseModel = '';
 
-    if (data.error) {
-      thinkingDiv.innerHTML = '<div class="chat-msg-content" style="color:#ff5f57">' + esc(data.error?.message || data.error || 'Request failed.') + '</div>';
-    } else if (data.choices?.[0]?.error) {
-      thinkingDiv.innerHTML = '<div class="chat-msg-content" style="color:#ff5f57">' + esc(data.choices[0].error) + '</div>';
-    } else {
-      const content = data.choices?.[0]?.message?.content || JSON.stringify(data);
-      const model = data.model || '';
-      const label = model ? `<div class="chat-msg-model">${esc(model)}</div>` : '';
-      thinkingDiv.innerHTML = label + `<div class="chat-msg-content">${esc(content)}</div>`;
+    try {
+      const res = await fetch(API_BASE + '/api/v1/playground/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        msgDiv.innerHTML = '<div class="chat-msg-content" style="color:#ff5f57">' + esc(errData.error?.message || 'Request failed.') + '</div>';
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        return;
+      }
+
+      const label = responseModel ? `<div class="chat-msg-model">${esc(responseModel)}</div>` : '';
+      msgDiv.innerHTML = label + '<div class="chat-msg-content"></div>';
+      const contentEl = msgDiv.querySelector('.chat-msg-content');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const data = JSON.parse(line.slice(6));
+          if (data.done) {
+            if (data.model) responseModel = data.model;
+            break;
+          }
+          if (data.error) {
+            contentEl.textContent = data.error?.message || data.error || 'Error';
+            break;
+          }
+          if (data.content) {
+            fullContent += data.content;
+            contentEl.textContent = fullContent;
+            messages.scrollTop = messages.scrollHeight;
+          }
+        }
+      }
+
+      if (responseModel) {
+        const modelEl = document.createElement('div');
+        modelEl.className = 'chat-msg-model';
+        modelEl.textContent = responseModel;
+        msgDiv.insertBefore(modelEl, msgDiv.firstChild);
+      }
+    } catch (err) {
+      msgDiv.innerHTML = '<div class="chat-msg-content" style="color:#ff5f57">Network error: ' + esc(err.message) + '</div>';
     }
     sendBtn.disabled = false;
     sendBtn.textContent = 'Send';

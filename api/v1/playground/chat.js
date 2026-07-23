@@ -2,6 +2,7 @@ const { getKv, handleOptions, json } = require('../../lib/db');
 
 const PATH_IDS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 const REQUEST_TIMEOUT_MS = 30000;
+const STREAM_TIMEOUT_MS = 60000;
 const OPencodeZenFree = [
   'deepseek-v4-flash-free', 'gpt-5-nano', 'big-pickle',
   'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
@@ -24,14 +25,18 @@ function loadPaths(reqModel) {
   });
 }
 
-async function callPath(path, body) {
+function resolvePayload(path, body) {
   const payload = { ...body };
   const requestedModel = body.model;
   if (!requestedModel || requestedModel === 'nexiom-default') {
     if (path.model) payload.model = path.model;
     else delete payload.model;
   }
+  return payload;
+}
 
+async function callPath(path, body) {
+  const payload = resolvePayload(path, body);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -47,6 +52,71 @@ async function callPath(path, body) {
     return { ok: upstream.ok, status: upstream.status, json: upstream.ok ? await upstream.json() : null };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+async function streamPath(path, body, res) {
+  const payload = resolvePayload(path, body);
+  payload.stream = true;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
+  try {
+    const upstream = await fetch(path.url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${path.key}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!upstream.ok) {
+      clearTimeout(timer);
+      const err = await upstream.json().catch(() => ({}));
+      return { ok: false, status: upstream.status, error: err };
+    }
+
+    const headers = {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    };
+    if (payload.model) headers['X-Model'] = payload.model;
+    res.writeHead(200, headers);
+
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+    let lastModel = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split('\n')) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.model) lastModel = parsed.model;
+            if (parsed.choices?.[0]?.delta?.content) {
+              res.write(`data: ${JSON.stringify({ content: parsed.choices[0].delta.content })}\n\n`);
+            }
+          } catch {}
+        }
+      }
+    }
+    if (lastModel) res.write(`data: ${JSON.stringify({ done: true, model: lastModel })}\n\n`);
+    else res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    clearTimeout(timer);
+    res.end();
+    return { ok: true };
+  } catch (err) {
+    clearTimeout(timer);
+    return { ok: false, status: 0, error: { message: err?.name === 'AbortError' ? 'timeout' : 'network error' } };
   }
 }
 
@@ -70,6 +140,9 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const isStream = body.stream === true;
+  delete body.stream;
+
   const candidates = loadPaths(body.model);
   if (candidates.length === 0) {
     json(res, 503, { error: 'No inference paths are configured yet.' });
@@ -80,31 +153,49 @@ module.exports = async (req, res) => {
 
   for (const path of candidates) {
     try {
-      const result = await callPath(path, body);
-
-      if (result.status === 429 || result.status >= 500) {
-        attempts.push({ path: path.label, status: result.status });
-        continue;
+      let result;
+      if (isStream) {
+        result = await streamPath(path, body, res);
+        if (result.ok) return;
+      } else {
+        result = await callPath(path, body);
+        if (result.status === 429 || result.status >= 500) {
+          attempts.push({ path: path.label, status: result.status });
+          continue;
+        }
+        if (!result.ok) {
+          attempts.push({ path: path.label, status: result.status });
+          continue;
+        }
+        const userKey = await kv.get(`userkey:${session.user_id}`);
+        if (userKey) {
+          const now = new Date().toISOString();
+          await kv.set(`apikey:${userKey.key}`, { ...userKey, last_used_at: now });
+          await kv.set(`userkey:${session.user_id}`, { ...userKey, last_used_at: now });
+        }
+        json(res, 200, result.json);
+        return;
       }
 
-      if (!result.ok) {
-        attempts.push({ path: path.label, status: result.status });
-        continue;
+      if (isStream) {
+        attempts.push({ path: path.label, status: result.status, error: result.error?.error?.message || result.error?.message || 'stream failed' });
       }
-
-      const userKey = await kv.get(`userkey:${session.user_id}`);
-      if (userKey) {
-        const now = new Date().toISOString();
-        await kv.set(`apikey:${userKey.key}`, { ...userKey, last_used_at: now });
-        await kv.set(`userkey:${session.user_id}`, { ...userKey, last_used_at: now });
-      }
-
-      json(res, 200, result.json);
-      return;
     } catch (err) {
+      if (isStream) {
+        try { res.end(); } catch {}
+        return;
+      }
       attempts.push({ path: path.label, error: err && err.name === 'AbortError' ? 'timeout' : 'network error' });
     }
   }
 
-  json(res, 502, { error: { message: 'Every inference path failed for this request.', attempts } });
+  if (isStream) {
+    if (!res.headersSent) {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    }
+    res.write(`data: ${JSON.stringify({ error: 'Every inference path failed for this request.', attempts })}\n\n`);
+    res.end();
+  } else {
+    json(res, 502, { error: { message: 'Every inference path failed for this request.', attempts } });
+  }
 };

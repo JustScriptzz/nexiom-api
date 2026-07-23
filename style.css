@@ -603,9 +603,9 @@ a { color: inherit; }
   font-family: var(--font-mono);
   font-size: 0.65rem;
   color: var(--text-dim);
-  text-align: right;
+  text-align: left;
   margin-bottom: 3px;
-  padding-right: 4px;
+  padding-left: 4px;
 }
 .chat-msg-assistant:first-child .chat-msg-content {
   color: var(--text-muted);
