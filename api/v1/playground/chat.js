@@ -19,7 +19,7 @@ function loadPaths(reqModel) {
     if (!p.url || !p.key) return false;
     try { if (new URL(p.url).hostname.includes('groq')) return false; } catch {}
     const isZen = p.label === 'path-c';
-    if (isZen && reqModel && !OPencodeZenFree.includes(reqModel)) return false;
+    if (isZen && reqModel && reqModel !== 'nexiom-default' && !OPencodeZenFree.includes(reqModel)) return false;
     return true;
   });
 }
