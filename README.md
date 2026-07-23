@@ -1,26 +1,64 @@
-# Nexiom API
+<p align="center">
+  <img src="logo.png" width="96" alt="Nexiom logo">
+</p>
 
-A single AI chat-completions endpoint backed by a chain of inference paths.
-If one is rate limited or down, the request falls through to the next one
-automatically. The public site never names which services sit behind it —
-that list only lives in `api/v1/chat/completions.js` and your env vars.
+<h1 align="center">Nexiom</h1>
+<p align="center"><b>One AI endpoint. It answers every time.</b></p>
+
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#deploy">Deploy</a>
+</p>
+
+---
+
+Nexiom is a single chat-completions endpoint sitting in front of a chain of
+independent inference paths. If one is throttled, slow, or down, the request
+quietly moves on to the next — your code never sees the difference.
+
+## Features
+
+- **One endpoint, one key** — same request shape as any standard chat
+  completions API, nothing provider-specific to learn.
+- **Automatic failover** — a busy or failing path is skipped in real time,
+  no retries needed on your end.
+- **No lock-in** — swap or add inference paths behind the scenes without
+  ever changing a line of your integration.
+
+## Quickstart
+
+```bash
+curl https://nexiom.dev/api/v1/chat/completions \
+  -H "Authorization: Bearer $NEXIOM_KEY" \
+  -d '{ "messages": [{ "role": "user", "content": "still there?" }] }'
+```
+
+Same request/response shape you already know. See the live site for the
+JavaScript and Python examples too.
+
+## How it works
+
+1. **You send one request** — one base URL, one key, the usual message body.
+2. **Nexiom finds a healthy path** — it checks what's fastest and available
+   right now.
+3. **You get an answer, not an error** — if a path is throttled or down,
+   Nexiom re-routes before it ever reaches your code.
 
 ## Project structure
 
 ```
 nexiom-api/
-├── index.html, style.css, script.js, logo.png   → the public site (static)
-└── api/v1/chat/completions.js                   → the gateway (serverless function)
+├── index.html, style.css, script.js, logo.png   → the public site
+└── api/v1/chat/completions.js                   → the gateway
 ```
 
 ## Deploy
 
-1. Push this repo to GitHub (already done if you're reading this from the repo).
-2. On vercel.com, "Add New Project" → import `JustScriptzz/nexiom-api`. No
-   build settings needed, it's zero-config.
-3. In the Vercel project's Settings → Environment Variables, add whichever
-   of these you have keys for. You don't need all of them — Nexiom only
-   tries paths it has a key for, in this order:
+1. On vercel.com → **Add New Project** → import this repo. Zero build
+   config needed.
+2. In **Settings → Environment Variables**, add whichever of these you have
+   keys for — Nexiom only uses the paths it has a key for:
 
    | Variable | Path |
    |---|---|
@@ -30,15 +68,13 @@ nexiom-api/
    | `ATLAS_API_KEY` (+ optional `ATLAS_BASE_URL`) | Atlas Cloud |
    | `OPENCODE_ZEN_API_KEY` | OpenCode Zen |
 
-   Also set `NEXIOM_API_KEY` — this is the key *your* users will send you.
-   Make it up yourself (a long random string), it isn't tied to any provider.
+   Also set `NEXIOM_API_KEY` — the key your own users will send you. Pick
+   any long random string; it isn't tied to a provider.
 
-   Optional per-path model overrides: `GROQ_MODEL`, `CEREBRAS_MODEL`,
-   `OFOX_MODEL`, `ATLAS_MODEL`, `OPENCODE_ZEN_MODEL` — otherwise sensible
-   defaults are used.
+   Optional model overrides: `GROQ_MODEL`, `CEREBRAS_MODEL`, `OFOX_MODEL`,
+   `ATLAS_MODEL`, `OPENCODE_ZEN_MODEL`.
 
-4. Redeploy after adding env vars (Vercel does this automatically on save,
-   or trigger it manually from the Deployments tab).
+3. Redeploy after saving env vars.
 
 ## Calling it
 
@@ -48,13 +84,9 @@ curl https://<your-domain>/api/v1/chat/completions \
   -d '{"messages":[{"role":"user","content":"hey"}]}'
 ```
 
-Same shape as any OpenAI-style chat completions call. Pass `"model"` if you
-want to force a specific underlying model; otherwise each path's default is
-used.
+Pass `"model"` to force a specific underlying model, otherwise each path's
+default is used.
 
-## Notes
+---
 
-- Logfare and g4f/g4v were left out on purpose — see the chat where this was
-  built for why.
-- `hello@nexiom.dev` in the site footer/access section is a placeholder —
-  swap it for a real inbox before sharing the link around.
+<p align="center"><sub>hello@nexiom.dev is a placeholder in the site footer — swap it for a real inbox before sharing the link around.</sub></p>
