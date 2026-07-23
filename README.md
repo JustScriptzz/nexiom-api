@@ -52,6 +52,4 @@ nexiom-api/
 └── api/v1/chat/completions.js                   → the gateway
 ```
 
----
 
-<p align="center"><sub>hello@nexiom.dev is a placeholder in the site footer — swap it for a real inbox before sharing the link around.</sub></p>
