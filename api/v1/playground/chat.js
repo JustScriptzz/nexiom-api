@@ -1,8 +1,8 @@
 const { getKv, handleOptions, json } = require('../../lib/db');
 
 const PATH_IDS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-const REQUEST_TIMEOUT_MS = 30000;
-const STREAM_TIMEOUT_MS = 60000;
+const REQUEST_TIMEOUT_MS = 60000;
+const STREAM_TIMEOUT_MS = 120000;
 const OPencodeZenFree = [
   'deepseek-v4-flash-free', 'big-pickle',
   'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
@@ -153,7 +153,7 @@ module.exports = async (req, res) => {
   const attempts = [];
 
   for (const [i, path] of candidates.entries()) {
-    const maxRetries = !isStream && i === candidates.length - 1 ? 2 : 0;
+    const maxRetries = !isStream && i === candidates.length - 1 ? 1 : 0;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
