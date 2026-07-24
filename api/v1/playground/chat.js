@@ -165,12 +165,15 @@ module.exports = async (req, res) => {
           break;
         }
         const result = await callPath(path, body);
-        if (!result.ok && result.status >= 500) {
+        if (!result.ok) {
           attempts.push({ path: path.label, status: result.status, attempt: attempt + 1 });
-          if (attempt < maxRetries) continue;
-          break;
-        } else if (!result.ok) {
-          attempts.push({ path: path.label, status: result.status });
+          if (result.status === 429) break;
+          if (result.status >= 500) {
+            if (i < candidates.length - 1) break;
+            if (attempt < maxRetries) continue;
+            if (result.json) { json(res, result.status, result.json); return; }
+            break;
+          }
           break;
         }
         const userKey = await kv.get(`userkey:${session.user_id}`);
@@ -187,7 +190,7 @@ module.exports = async (req, res) => {
           return;
         }
         attempts.push({ path: path.label, error: err && err.name === 'AbortError' ? 'timeout' : 'network error', attempt: attempt + 1 });
-        if (attempt < maxRetries) continue;
+        if (i === candidates.length - 1 && attempt < maxRetries) continue;
       }
     }
   }

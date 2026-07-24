@@ -1,7 +1,7 @@
 const { Redis } = require('@upstash/redis');
 
 const PATH_IDS = ["A", "B", "C", "D", "E", "F", "G", "H"];
-const REQUEST_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = 30000;
 const OPencodeZenFree = [
   'deepseek-v4-flash-free', 'big-pickle',
   'mimo-v2.5-free', 'mimo-v2-flash', 'laguna-s-2.1-free',
@@ -138,20 +138,26 @@ module.exports = async (req, res) => {
         if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
         const result = await callPath(path, body);
 
-        if (!result.ok && result.status >= 500) {
-          attempts.push({ path: path.label, status: result.status, attempt: attempt + 1 });
+        if (result.ok) {
+          res.status(200).json(result.json);
+          return;
+        }
+
+        attempts.push({ path: path.label, status: result.status, attempt: attempt + 1 });
+
+        if (result.status === 429) break;
+
+        if (result.status >= 500) {
+          if (i < candidates.length - 1) break;
           if (attempt < maxRetries) continue;
-          break;
-        } else if (!result.ok) {
-          attempts.push({ path: path.label, status: result.status });
+          if (result.json) { res.status(result.status).json(result.json); return; }
           break;
         }
 
-        res.status(result.ok ? 200 : result.status).json(result.json);
-        return;
+        break;
       } catch (err) {
         attempts.push({ path: path.label, error: err && err.name === "AbortError" ? "timeout" : "network error", attempt: attempt + 1 });
-        if (attempt < maxRetries) continue;
+        if (i === candidates.length - 1 && attempt < maxRetries) continue;
       }
     }
   }
